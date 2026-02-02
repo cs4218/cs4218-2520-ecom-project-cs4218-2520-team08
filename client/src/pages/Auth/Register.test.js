@@ -27,7 +27,9 @@ jest.mock('../../context/cart', () => ({
     
 jest.mock('../../context/search', () => ({
     useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]) // Mock useSearch hook to return null state and a mock function
-  }));  
+}));
+
+jest.mock('../../hooks/useCategory', () => jest.fn(() => []));
 
 Object.defineProperty(window, 'localStorage', {
   value: {
@@ -131,7 +133,7 @@ describe("Register Component", () => {
 
   it("should register the user successfully and navigate to login page", async () => {
     axios.post.mockResolvedValueOnce({ data: { success: true } });
-
+    
     const { getByText, getByPlaceholderText } = render(
       <MemoryRouter initialEntries={["/register"]}>
         <Routes>
