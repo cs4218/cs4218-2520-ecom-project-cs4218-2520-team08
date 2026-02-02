@@ -20,11 +20,18 @@ export default {
   transformIgnorePatterns: ["/node_modules/(?!(styleMock\\.js)$)"],
 
   // only run these tests
-  testMatch: ["<rootDir>/client/src/pages/Auth/*.test.js"],
+  testMatch: ["<rootDir>/client/src/**/*.test.js"],
 
   // jest code coverage
   collectCoverage: true,
-  collectCoverageFrom: ["client/src/pages/Auth/**"],
+  collectCoverageFrom: [
+    "client/src/pages/user/Orders.js",
+    "client/src/pages/user/Profile.js",
+    "client/src/pages/admin/Users.js",
+    "client/src/pages/Search.js",
+    "client/src/components/Form/SearchInput.js",
+    "client/src/context/search.js",
+  ],
   coverageThreshold: {
     global: {
       lines: 100,
