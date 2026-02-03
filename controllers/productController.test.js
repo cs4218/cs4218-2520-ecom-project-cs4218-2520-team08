@@ -18,7 +18,6 @@ import categoryModel from "../models/categoryModel.js";
 import fs from "fs";
 import slugify from "slugify";
 
-// ---------- Mocks needed just to import productController.js safely ----------
 jest.mock("dotenv", () => ({
   __esModule: true,
   default: { config: jest.fn() },
@@ -73,7 +72,6 @@ jest.mock("../models/categoryModel.js", () => ({
   default: { findOne: jest.fn() },
 }));
 
-// orderModel not needed for these tests (payment functions), so ignore
 
 // ---------- Helpers ----------
 function mockRes() {
@@ -195,7 +193,6 @@ describe("productController.js — increase coverage", () => {
     });
   });
 
-  // ---------------- updateProductController ----------------
   describe("updateProductController", () => {
     test("validation: missing price -> 500", async () => {
       const req = {
@@ -313,7 +310,6 @@ describe("productController.js — increase coverage", () => {
     });
   });
 
-  // ---------------- getProductController ----------------
   describe("getProductController", () => {
     test("happy: returns products list -> 200", async () => {
       const req = {};
@@ -348,7 +344,6 @@ describe("productController.js — increase coverage", () => {
     });
   });
 
-  // ---------------- getSingleProductController ----------------
   describe("getSingleProductController", () => {
     test("happy: returns single product -> 200", async () => {
       const req = { params: { slug: "phone" } };
@@ -382,7 +377,6 @@ describe("productController.js — increase coverage", () => {
     });
   });
 
-  // ---------------- productPhotoController ----------------
   describe("productPhotoController", () => {
     test("happy: product has photo -> sets content-type and returns data", async () => {
       const req = { params: { pid: "p1" } };
@@ -416,7 +410,6 @@ describe("productController.js — increase coverage", () => {
     });
   });
 
-  // ---------------- productFiltersController ----------------
   describe("productFiltersController", () => {
     test("happy: checked and radio produce args -> 200", async () => {
       const req = { body: { checked: ["c1"], radio: [10, 50] } };
@@ -474,7 +467,6 @@ describe("productController.js — increase coverage", () => {
     });
   });
 
-  // ---------------- productListController ----------------
   describe("productListController", () => {
     test("happy: default page (no param) -> 200", async () => {
       const req = { params: {} };
@@ -560,7 +552,6 @@ describe("productController.js — increase coverage", () => {
     });
   });
 
-  // ---------------- productCategoryController ----------------
   describe("productCategoryController", () => {
     test("happy -> 200", async () => {
       const req = { params: { slug: "cat-slug" } };
