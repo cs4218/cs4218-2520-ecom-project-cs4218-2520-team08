@@ -7,7 +7,6 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 
 import Products from "./Products";
 
-// ---- mocks ----
 jest.mock("axios");
 
 jest.mock("react-hot-toast", () => ({
@@ -84,7 +83,6 @@ describe("Admin Products page", () => {
     expect(screen.getByText("iPhone")).toBeInTheDocument();
     expect(screen.getByText("Phone")).toBeInTheDocument();
 
-    // Links go to the right admin edit route
     const macbookLink = screen.getByRole("link", { name: /macbook/i });
     expect(macbookLink).toHaveAttribute(
       "href",

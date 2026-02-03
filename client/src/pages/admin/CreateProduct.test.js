@@ -7,7 +7,6 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 
 import CreateProduct from "./CreateProduct";
 
-// -------------------- Mocks --------------------
 jest.mock("axios");
 jest.mock("react-hot-toast", () => ({
   __esModule: true,
@@ -33,7 +32,6 @@ jest.mock("react-router-dom", () => {
   };
 });
 
-// Mock AntD Select as <select> so we can interact reliably
 jest.mock("antd", () => {
   const React = require("react");
   const Select = ({ children, onChange, placeholder }) => (
@@ -49,10 +47,8 @@ jest.mock("antd", () => {
   return { Select };
 });
 
-// Used for photo preview
 global.URL.createObjectURL = jest.fn(() => "blob:mock");
 
-// Mock FormData to inspect appended fields
 class MockFormData {
   constructor() {
     this._data = {};
@@ -163,7 +159,6 @@ describe("CreateProduct (Admin Actions) — full green coverage", () => {
       target: { value: "2" },
     });
 
-    // Ensure photo preview is NOT shown (photo branch false)
     expect(screen.queryByAltText("product_photo")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText("CREATE PRODUCT"));
@@ -228,7 +223,6 @@ describe("CreateProduct (Admin Actions) — full green coverage", () => {
       target: { value: "10" },
     });
 
-    // shipping = Yes (covers Option value "1" path)
     fireEvent.change(screen.getByLabelText("Select Shipping "), {
       target: { value: "1" },
     });

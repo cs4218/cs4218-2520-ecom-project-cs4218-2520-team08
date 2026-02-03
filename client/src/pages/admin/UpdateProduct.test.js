@@ -18,7 +18,6 @@ jest.mock("react-hot-toast", () => ({
   },
 }));
 
-// isolate layout/menu
 jest.mock("./../../components/Layout", () => ({ children }) => (
   <div data-testid="layout">{children}</div>
 ));
@@ -26,7 +25,6 @@ jest.mock("./../../components/AdminMenu", () => () => (
   <div data-testid="admin-menu">AdminMenu</div>
 ));
 
-// mock router navigate + params
 const mockNavigate = jest.fn();
 jest.mock("react-router-dom", () => {
   const actual = jest.requireActual("react-router-dom");
@@ -54,10 +52,8 @@ jest.mock("antd", () => {
   return { Select };
 });
 
-// URL.createObjectURL for photo preview branch
 global.URL.createObjectURL = jest.fn(() => "blob:mock");
 
-// Mock FormData to inspect appended fields
 class MockFormData {
   constructor() {
     this._data = {};
@@ -126,29 +122,23 @@ describe("UpdateProduct — high coverage", () => {
 
     renderUpdateProduct();
 
-    // wait both GETs
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
 
-    // form populated
     expect(screen.getByPlaceholderText("write a name")).toHaveValue("Old Name");
     expect(screen.getByPlaceholderText("write a description")).toHaveValue("Old Desc");
     expect(screen.getByPlaceholderText("write a Price")).toHaveValue(10);
     expect(screen.getByPlaceholderText("write a quantity")).toHaveValue(5);
 
-    // categories rendered
     expect(screen.getByRole("option", { name: "Shoes" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Hats" })).toBeInTheDocument();
 
-    // photo branch when photo is empty -> uses product-photo/${id}
     const img = screen.getAllByAltText("product_photo")[0];
     expect(img).toHaveAttribute("src", "/api/v1/product/product-photo/pid1");
   });
 
   test("handles getSingleProduct failure (catch branch) without crashing", async () => {
     axios.get
-      // getSingleProduct fails
       .mockRejectedValueOnce(new Error("get product failed"))
-      // getAllCategory still resolves
       .mockResolvedValueOnce({
         data: { success: true, category: [] },
       });
@@ -161,7 +151,6 @@ describe("UpdateProduct — high coverage", () => {
 
   test("handles getAllCategory failure (catch branch) with toast.error", async () => {
     axios.get
-      // getSingleProduct ok
       .mockResolvedValueOnce({
         data: {
           product: {
@@ -175,7 +164,6 @@ describe("UpdateProduct — high coverage", () => {
           },
         },
       })
-      // getAllCategory fails
       .mockRejectedValueOnce(new Error("get categories failed"));
 
     renderUpdateProduct();
@@ -213,7 +201,6 @@ describe("UpdateProduct — high coverage", () => {
     const fileInput = label.querySelector("input[type='file']");
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    // preview branch uses URL.createObjectURL
     await waitFor(() => expect(global.URL.createObjectURL).toHaveBeenCalled());
     const img = screen.getAllByAltText("product_photo")[0];
     expect(img).toHaveAttribute("src", "blob:mock");
@@ -245,7 +232,6 @@ describe("UpdateProduct — high coverage", () => {
     renderUpdateProduct();
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
 
-    // change some fields
     fireEvent.change(screen.getByPlaceholderText("write a name"), {
       target: { value: "New Name" },
     });
@@ -254,13 +240,11 @@ describe("UpdateProduct — high coverage", () => {
 
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
 
-    // ensure correct url includes id
     const [url, formDataArg] = axios.put.mock.calls[0];
     expect(url).toBe("/api/v1/product/update-product/pid1");
     expect(formDataArg).toBeInstanceOf(MockFormData);
     expect(formDataArg._data.name).toBe("New Name");
 
-    // expected correct success behaviour
     expect(toast.success).toHaveBeenCalledWith("Product Updated Successfully");
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard/admin/products");
   });
