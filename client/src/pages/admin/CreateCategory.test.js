@@ -20,7 +20,6 @@ jest.mock("./../../components/AdminMenu", () => () => (
   <div data-testid="admin-menu">AdminMenu</div>
 ));
 
-// CategoryForm -> input + submit button
 jest.mock("../../components/Form/CategoryForm", () => {
   return function CategoryFormMock({ value, setValue, handleSubmit }) {
     return (
@@ -36,7 +35,6 @@ jest.mock("../../components/Form/CategoryForm", () => {
   };
 });
 
-// AntD Modal -> renders only when visible=true
 jest.mock("antd", () => ({
   Modal: ({ visible, children, onCancel }) =>
     visible ? (
@@ -64,7 +62,6 @@ describe("CreateCategory — coverage max", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // IMPORTANT: default safe response so extra GETs (double effect) don't break tests
     axios.get.mockResolvedValue({
       data: { success: true, category: [] },
     });

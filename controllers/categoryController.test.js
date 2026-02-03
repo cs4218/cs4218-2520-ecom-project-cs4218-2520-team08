@@ -21,7 +21,7 @@ jest.mock("../models/categoryModel.js", () => {
     return { ...doc, save: mockSave };
   });
 
-  ModelCtor.create = jest.fn(); // IMPORTANT: controller might use .create()
+  ModelCtor.create = jest.fn(); 
   ModelCtor.findOne = jest.fn();
   ModelCtor.findByIdAndUpdate = jest.fn();
   ModelCtor.find = jest.fn();
@@ -79,14 +79,13 @@ describe("controllers/categoryController.js", () => {
       categoryModel.findOne.mockResolvedValueOnce(null);
       slugify.mockReturnValueOnce("shoes");
 
-      // if controller uses categoryModel.create(...)
+    
       categoryModel.create.mockResolvedValueOnce({
         _id: "new1",
         name: "Shoes",
         slug: "shoes",
       });
 
-      // if controller uses new categoryModel(...).save()
       categoryModel.__mockSave.mockResolvedValueOnce({
         _id: "new1",
         name: "Shoes",
@@ -97,7 +96,6 @@ describe("controllers/categoryController.js", () => {
 
       expect(slugify).toHaveBeenCalledWith("Shoes");
 
-      // One of these patterns must have happened:
       const createCalled = categoryModel.create.mock.calls.length > 0;
       const ctorCalled = categoryModel.mock.calls.length > 0;
 
@@ -141,7 +139,7 @@ describe("controllers/categoryController.js", () => {
       expect(res.send).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
-          message: "Errro in Category", // keep if your controller uses this string
+          message: "Errro in Category", 
         })
       );
     });
