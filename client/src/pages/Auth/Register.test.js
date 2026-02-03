@@ -51,6 +51,7 @@ window.matchMedia = window.matchMedia || function() {
 describe("Register Component", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        jest.spyOn(console, "log").mockImplementation(() => {});
     });
 
   it("renders register form", () => {

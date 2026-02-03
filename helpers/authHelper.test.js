@@ -6,6 +6,7 @@ jest.mock('bcrypt');
 describe('authHelper', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "log").mockImplementationOnce(() => {});
   });
 
   describe('hashPassword', () => {

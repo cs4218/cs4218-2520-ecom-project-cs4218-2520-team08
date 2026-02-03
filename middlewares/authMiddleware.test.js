@@ -10,6 +10,7 @@ describe('authMiddleware', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "log").mockImplementation(() => {});
     process.env.JWT_SECRET = 'test-secret';
 
     mockReq = {

@@ -60,6 +60,7 @@ window.matchMedia =
 describe("Login Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "log").mockImplementation(() => {});
   });
 
   it("renders login form", () => {

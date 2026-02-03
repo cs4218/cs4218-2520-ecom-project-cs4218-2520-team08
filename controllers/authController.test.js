@@ -19,6 +19,7 @@ describe("authController", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "log").mockImplementation(() => {});
     process.env.JWT_SECRET = "test-secret";
 
     mockReq = {
@@ -449,7 +450,6 @@ describe("authController", () => {
     it("handles errors", () => {
       mockRes.send = jest.fn();
       const mockError = new Error("Test error");
-      jest.spyOn(console, "log").mockImplementationOnce(() => {});
 
       // Simulate error by making send throw
       mockRes.send.mockImplementationOnce(() => {
