@@ -1,10 +1,13 @@
+// CreateCategory.test.js
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
-import CreateCategory from "./CreateCategory";
+
+// ✅ IMPORTANT: import the SAME file that shows in coverage: pages/admin/CreateCategory.js
+import CreateCategory from "../../pages/admin/CreateCategory";
 
 jest.mock("axios");
 
@@ -13,10 +16,10 @@ jest.mock("react-hot-toast", () => ({
   default: { success: jest.fn(), error: jest.fn() },
 }));
 
-jest.mock("./../../components/Layout", () => ({ children }) => (
+jest.mock("../../components/Layout", () => ({ children }) => (
   <div data-testid="layout">{children}</div>
 ));
-jest.mock("./../../components/AdminMenu", () => () => (
+jest.mock("../../components/AdminMenu", () => () => (
   <div data-testid="admin-menu">AdminMenu</div>
 ));
 
@@ -58,16 +61,30 @@ function renderPage() {
   );
 }
 
-describe("CreateCategory — coverage max", () => {
+describe("CreateCategory (pages/admin) — coverage boost", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-
-    axios.get.mockResolvedValue({
-      data: { success: true, category: [] },
-    });
+    // default mount GET
+    axios.get.mockResolvedValue({ data: { success: true, category: [] } });
   });
 
-  test("GET categories success renders rows (map branch)", async () => {
+  test("renders base page chrome (Layout/AdminMenu/table headers) + calls GET on mount", async () => {
+    renderPage();
+
+    expect(screen.getByTestId("layout")).toBeInTheDocument();
+    expect(screen.getByTestId("admin-menu")).toBeInTheDocument();
+    expect(screen.getByText("Manage Category")).toBeInTheDocument();
+    expect(screen.getByText("Name")).toBeInTheDocument();
+    expect(screen.getByText("Actions")).toBeInTheDocument();
+
+    await waitFor(() =>
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category")
+    );
+  });
+
+  // -------------------- GET ALL CATEGORY --------------------
+
+  test("GET success:true -> renders rows (map branch)", async () => {
     axios.get.mockResolvedValueOnce({
       data: {
         success: true,
@@ -80,49 +97,70 @@ describe("CreateCategory — coverage max", () => {
 
     renderPage();
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
-    expect(screen.getByText("Shoes")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
     expect(screen.getByText("Hats")).toBeInTheDocument();
     expect(screen.getAllByText("Edit")).toHaveLength(2);
     expect(screen.getAllByText("Delete")).toHaveLength(2);
   });
 
-  test("GET categories success:false (branch) -> does not set categories", async () => {
+  test("GET success:false -> does not set categories (no rows rendered)", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: false, category: [{ _id: "c1", name: "Shoes" }] },
     });
 
     renderPage();
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category")
+    );
     expect(screen.queryByText("Shoes")).not.toBeInTheDocument();
   });
 
-  test("GET categories throws (catch) -> toast.error", async () => {
+  test("GET rejects -> toast.error in catch", async () => {
     axios.get.mockRejectedValueOnce(new Error("GET fail"));
 
     renderPage();
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category")
+    );
+
     expect(toast.error).toHaveBeenCalledWith(
       "Something wwent wrong in getting catgeory"
     );
   });
 
-  test("CREATE: POST success -> toast.success and refresh GET called", async () => {
-    // initial categories (empty)
+  test("GET resolves malformed {} -> throws inside try -> toast.error catch", async () => {
+    axios.get.mockResolvedValueOnce({}); // no data => data.success throws
+
+    renderPage();
+
+    await waitFor(() =>
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category")
+    );
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "Something wwent wrong in getting catgeory"
+    );
+  });
+
+  // -------------------- CREATE --------------------
+
+  test("CREATE success -> toast.success + refresh GET -> new row appears", async () => {
+    // mount: empty
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
 
+    // create
     axios.post.mockResolvedValueOnce({ data: { success: true } });
 
-    // refresh list after create
+    // refresh after create
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "NewCat" }] },
     });
 
     renderPage();
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(1));
 
     fireEvent.change(screen.getByLabelText("category-input"), {
       target: { value: "NewCat" },
@@ -142,7 +180,7 @@ describe("CreateCategory — coverage max", () => {
     expect(screen.getByText("NewCat")).toBeInTheDocument();
   });
 
-  test("CREATE: POST success:false -> toast.error(data.message)", async () => {
+  test("CREATE success:false -> toast.error(data.message)", async () => {
     axios.post.mockResolvedValueOnce({
       data: { success: false, message: "Already exists" },
     });
@@ -159,7 +197,7 @@ describe("CreateCategory — coverage max", () => {
     expect(toast.error).toHaveBeenCalledWith("Already exists");
   });
 
-  test("CREATE: POST throws -> toast.error(catch msg)", async () => {
+  test("CREATE rejects -> toast.error catch", async () => {
     axios.post.mockRejectedValueOnce(new Error("POST fail"));
 
     renderPage();
@@ -174,13 +212,30 @@ describe("CreateCategory — coverage max", () => {
     expect(toast.error).toHaveBeenCalledWith("somthing went wrong in input form");
   });
 
-  test("EDIT: clicking Edit opens modal and CLOSE triggers onCancel branch", async () => {
+  test("CREATE resolves data:undefined -> else reads data.message -> throws -> catch toast.error", async () => {
+    axios.post.mockResolvedValueOnce({ data: undefined });
+
+    renderPage();
+    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText("category-input"), {
+      target: { value: "BadResp" },
+    });
+    fireEvent.click(screen.getByText("SUBMIT"));
+
+    await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    expect(toast.error).toHaveBeenCalledWith("somthing went wrong in input form");
+  });
+
+  // -------------------- EDIT / MODAL --------------------
+
+  test("Edit opens modal, seeds updatedName, CLOSE triggers onCancel (setVisible false)", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
     });
 
     renderPage();
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Edit"));
     expect(screen.getByTestId("modal")).toBeInTheDocument();
@@ -192,7 +247,9 @@ describe("CreateCategory — coverage max", () => {
     expect(screen.queryByTestId("modal")).not.toBeInTheDocument();
   });
 
-  test("UPDATE: PUT success -> toast.success, modal closes, refresh called", async () => {
+  // -------------------- UPDATE --------------------
+
+  test("UPDATE success -> toast.success + resets modal state + refresh renders updated row", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
     });
@@ -204,9 +261,10 @@ describe("CreateCategory — coverage max", () => {
     });
 
     renderPage();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Edit"));
+
     const modalInput = screen.getAllByLabelText("category-input")[1];
     fireEvent.change(modalInput, { target: { value: "Shoes2" } });
 
@@ -220,12 +278,20 @@ describe("CreateCategory — coverage max", () => {
     );
 
     expect(toast.success).toHaveBeenCalledWith("Shoes2 is updated");
+
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
-    expect(screen.queryByTestId("modal")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByTestId("modal")).not.toBeInTheDocument()
+    );
     expect(screen.getByText("Shoes2")).toBeInTheDocument();
+
+    // extra: reopen modal -> updatedName should now seed from current row name
+    fireEvent.click(screen.getByText("Edit"));
+    const reopenedModalInput = screen.getAllByLabelText("category-input")[1];
+    expect(reopenedModalInput).toHaveValue("Shoes2");
   });
 
-  test("UPDATE: PUT success:false -> toast.error(data.message)", async () => {
+  test("UPDATE success:false -> toast.error(data.message)", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
     });
@@ -235,7 +301,7 @@ describe("CreateCategory — coverage max", () => {
     });
 
     renderPage();
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Edit"));
     fireEvent.click(screen.getAllByText("SUBMIT")[1]);
@@ -244,7 +310,7 @@ describe("CreateCategory — coverage max", () => {
     expect(toast.error).toHaveBeenCalledWith("Update failed");
   });
 
-  test("UPDATE: PUT throws -> toast.error(catch msg)", async () => {
+  test("UPDATE rejects -> toast.error catch", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
     });
@@ -252,7 +318,7 @@ describe("CreateCategory — coverage max", () => {
     axios.put.mockRejectedValueOnce(new Error("PUT fail"));
 
     renderPage();
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Edit"));
     fireEvent.click(screen.getAllByText("SUBMIT")[1]);
@@ -261,17 +327,38 @@ describe("CreateCategory — coverage max", () => {
     expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");
   });
 
-  test("DELETE: success -> toast.success and refresh", async () => {
+  test("UPDATE resolves malformed {} -> throws inside try -> toast.error catch", async () => {
+    axios.get.mockResolvedValueOnce({
+      data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
+    });
+
+    axios.put.mockResolvedValueOnce({}); // no data => data.success throws
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Edit"));
+    fireEvent.click(screen.getAllByText("SUBMIT")[1]);
+
+    await waitFor(() => expect(axios.put).toHaveBeenCalled());
+    expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");
+  });
+
+  // -------------------- DELETE --------------------
+
+  test("DELETE success -> toast.success + refresh removes row", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
     });
 
     axios.delete.mockResolvedValueOnce({ data: { success: true } });
 
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
+    axios.get.mockResolvedValueOnce({
+      data: { success: true, category: [] },
+    });
 
     renderPage();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Delete"));
 
@@ -282,10 +369,14 @@ describe("CreateCategory — coverage max", () => {
     );
 
     expect(toast.success).toHaveBeenCalledWith("category is deleted");
+
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(screen.queryByText("Shoes")).not.toBeInTheDocument()
+    );
   });
 
-  test("DELETE: success:false -> toast.error(data.message)", async () => {
+  test("DELETE success:false -> toast.error(data.message)", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
     });
@@ -295,7 +386,7 @@ describe("CreateCategory — coverage max", () => {
     });
 
     renderPage();
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Delete"));
 
@@ -303,7 +394,7 @@ describe("CreateCategory — coverage max", () => {
     expect(toast.error).toHaveBeenCalledWith("Delete failed");
   });
 
-  test("DELETE: throws -> toast.error(catch msg)", async () => {
+  test("DELETE rejects -> toast.error catch", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
     });
@@ -311,7 +402,23 @@ describe("CreateCategory — coverage max", () => {
     axios.delete.mockRejectedValueOnce(new Error("DELETE fail"));
 
     renderPage();
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Delete"));
+
+    await waitFor(() => expect(axios.delete).toHaveBeenCalled());
+    expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");
+  });
+
+  test("DELETE resolves data:undefined -> throws inside try -> toast.error catch", async () => {
+    axios.get.mockResolvedValueOnce({
+      data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
+    });
+
+    axios.delete.mockResolvedValueOnce({ data: undefined }); // data.success throws
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Delete"));
 
