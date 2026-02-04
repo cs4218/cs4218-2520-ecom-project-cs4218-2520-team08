@@ -248,7 +248,6 @@ describe("controllers/productController.js", () => {
     });
   });
 
-  // ---------------- updateProductController ----------------
   describe("updateProductController", () => {
     test("validation: missing category -> 500", async () => {
       const req = {
@@ -327,7 +326,6 @@ describe("controllers/productController.js", () => {
     });
   });
 
-  // ---------------- deleteProductController ----------------
   describe("deleteProductController", () => {
     test("happy -> 200", async () => {
       const req = { params: { pid: "p1" } };
@@ -380,7 +378,6 @@ describe("controllers/productController.js", () => {
     });
   });
 
-  // ---------------- getSingleProductController ----------------
   describe("getSingleProductController", () => {
     test("happy -> 200", async () => {
       const req = { params: { slug: "abc" } };
@@ -526,7 +523,6 @@ describe("controllers/productController.js", () => {
     });
   });
 
-  // ---------------- productListController ----------------
   describe("productListController", () => {
     test("default page -> 200 (branch)", async () => {
       const req = { params: {} };
