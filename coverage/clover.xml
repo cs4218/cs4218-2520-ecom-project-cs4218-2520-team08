@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1770199144969" clover="3.2.0">
-  <project timestamp="1770199144970" name="All files">
-    <metrics statements="261" coveredstatements="236" conditionals="46" coveredconditionals="36" methods="67" coveredmethods="54" elements="374" coveredelements="326" complexity="0" loc="261" ncloc="261" packages="4" files="10" classes="10"/>
+<coverage generated="1770287190631" clover="3.2.0">
+  <project timestamp="1770287190631" name="All files">
+    <metrics statements="261" coveredstatements="244" conditionals="46" coveredconditionals="38" methods="67" coveredmethods="59" elements="374" coveredelements="341" complexity="0" loc="261" ncloc="261" packages="4" files="10" classes="10"/>
     <package name="components">
       <metrics statements="2" coveredstatements="2" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
       <file name="AdminMenu.js" path="/Users/shika/Documents/Uni/cs4218-2520-ecom-project-cs4218-2520-team08/client/src/components/AdminMenu.js">
@@ -78,7 +78,7 @@
       </file>
     </package>
     <package name="pages.admin">
-      <metrics statements="207" coveredstatements="185" conditionals="34" coveredconditionals="26" methods="50" coveredmethods="38"/>
+      <metrics statements="207" coveredstatements="193" conditionals="34" coveredconditionals="28" methods="50" coveredmethods="43"/>
       <file name="AdminDashboard.js" path="/Users/shika/Documents/Uni/cs4218-2520-ecom-project-cs4218-2520-team08/client/src/pages/admin/AdminDashboard.js">
         <metrics statements="3" coveredstatements="3" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="5" count="1" type="stmt"/>
@@ -86,30 +86,30 @@
         <line num="7" count="2" type="stmt"/>
       </file>
       <file name="AdminOrders.js" path="/Users/shika/Documents/Uni/cs4218-2520-ecom-project-cs4218-2520-team08/client/src/pages/admin/AdminOrders.js">
-        <metrics statements="23" coveredstatements="15" conditionals="4" coveredconditionals="2" methods="8" coveredmethods="3"/>
+        <metrics statements="23" coveredstatements="23" conditionals="4" coveredconditionals="4" methods="8" coveredmethods="8"/>
         <line num="9" count="1" type="stmt"/>
         <line num="11" count="1" type="stmt"/>
-        <line num="12" count="7" type="stmt"/>
-        <line num="19" count="7" type="stmt"/>
-        <line num="20" count="7" type="stmt"/>
-        <line num="21" count="7" type="stmt"/>
-        <line num="22" count="7" type="stmt"/>
+        <line num="12" count="11" type="stmt"/>
+        <line num="19" count="10" type="stmt"/>
+        <line num="20" count="10" type="stmt"/>
+        <line num="21" count="10" type="stmt"/>
+        <line num="22" count="10" type="stmt"/>
         <line num="23" count="6" type="stmt"/>
         <line num="24" count="6" type="stmt"/>
         <line num="25" count="5" type="stmt"/>
         <line num="27" count="1" type="stmt"/>
-        <line num="31" count="7" type="stmt"/>
-        <line num="32" count="7" type="cond" truecount="2" falsecount="0"/>
-        <line num="35" count="7" type="stmt"/>
-        <line num="36" count="0" type="stmt"/>
-        <line num="37" count="0" type="stmt"/>
-        <line num="40" count="0" type="stmt"/>
-        <line num="42" count="0" type="stmt"/>
-        <line num="45" count="7" type="stmt"/>
-        <line num="54" count="0" type="stmt"/>
-        <line num="73" count="0" type="stmt"/>
-        <line num="77" count="0" type="stmt"/>
-        <line num="92" count="0" type="stmt"/>
+        <line num="31" count="10" type="stmt"/>
+        <line num="32" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="35" count="10" type="stmt"/>
+        <line num="36" count="2" type="stmt"/>
+        <line num="37" count="2" type="stmt"/>
+        <line num="40" count="1" type="stmt"/>
+        <line num="42" count="1" type="stmt"/>
+        <line num="45" count="10" type="stmt"/>
+        <line num="54" count="4" type="stmt"/>
+        <line num="73" count="2" type="stmt"/>
+        <line num="77" count="20" type="stmt"/>
+        <line num="92" count="1" type="stmt"/>
       </file>
       <file name="CreateCategory.js" path="/Users/shika/Documents/Uni/cs4218-2520-ecom-project-cs4218-2520-team08/client/src/pages/admin/CreateCategory.js">
         <metrics statements="52" coveredstatements="52" conditionals="8" coveredconditionals="8" methods="10" coveredmethods="10"/>

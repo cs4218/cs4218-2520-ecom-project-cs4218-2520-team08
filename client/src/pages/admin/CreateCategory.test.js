@@ -6,7 +6,6 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 
-// ✅ IMPORTANT: import the SAME file that shows in coverage: pages/admin/CreateCategory.js
 import CreateCategory from "../../pages/admin/CreateCategory";
 
 jest.mock("axios");
@@ -82,8 +81,6 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     );
   });
 
-  // -------------------- GET ALL CATEGORY --------------------
-
   test("GET success:true -> renders rows (map branch)", async () => {
     axios.get.mockResolvedValueOnce({
       data: {
@@ -143,8 +140,6 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
       "Something wwent wrong in getting catgeory"
     );
   });
-
-  // -------------------- CREATE --------------------
 
   test("CREATE success -> toast.success + refresh GET -> new row appears", async () => {
     // mount: empty
@@ -227,7 +222,6 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     expect(toast.error).toHaveBeenCalledWith("somthing went wrong in input form");
   });
 
-  // -------------------- EDIT / MODAL --------------------
 
   test("Edit opens modal, seeds updatedName, CLOSE triggers onCancel (setVisible false)", async () => {
     axios.get.mockResolvedValueOnce({
@@ -247,7 +241,6 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     expect(screen.queryByTestId("modal")).not.toBeInTheDocument();
   });
 
-  // -------------------- UPDATE --------------------
 
   test("UPDATE success -> toast.success + resets modal state + refresh renders updated row", async () => {
     axios.get.mockResolvedValueOnce({
@@ -285,7 +278,6 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     );
     expect(screen.getByText("Shoes2")).toBeInTheDocument();
 
-    // extra: reopen modal -> updatedName should now seed from current row name
     fireEvent.click(screen.getByText("Edit"));
     const reopenedModalInput = screen.getAllByLabelText("category-input")[1];
     expect(reopenedModalInput).toHaveValue("Shoes2");
@@ -344,7 +336,6 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");
   });
 
-  // -------------------- DELETE --------------------
 
   test("DELETE success -> toast.success + refresh removes row", async () => {
     axios.get.mockResolvedValueOnce({
