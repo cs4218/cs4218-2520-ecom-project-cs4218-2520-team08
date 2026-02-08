@@ -32,6 +32,8 @@ describe("Dashboard Component", () => {
           name: "John Doe",
           email: "test@example.com",
           address: "123 Street",
+          phone: "1234567890",
+          DOB: "1990-01-01",
         },
       },
       jest.fn(),
@@ -51,6 +53,8 @@ describe("Dashboard Component", () => {
           name: "John Doe",
           email: "test@example.com",
           address: "123 Street",
+          phone: "1234567890",
+          DOB: "1990-01-01",
         },
       },
       jest.fn(),
@@ -68,6 +72,8 @@ describe("Dashboard Component", () => {
           name: "John Doe",
           email: "test@example.com",
           address: "123 Street",
+          phone: "1234567890",
+          DOB: "1990-01-01",
         },
       },
       jest.fn(),
@@ -85,6 +91,8 @@ describe("Dashboard Component", () => {
           name: "John Doe",
           email: "test@example.com",
           address: "123 Street",
+          phone: "1234567890",
+          DOB: "1990-01-01",
         },
       },
       jest.fn(),
@@ -102,6 +110,8 @@ describe("Dashboard Component", () => {
           name: "John Doe",
           email: "test@example.com",
           address: "123 Street",
+          phone: "1234567890",
+          DOB: "1990-01-01",
         },
       },
       jest.fn(),
@@ -110,6 +120,25 @@ describe("Dashboard Component", () => {
     const { getByText } = render(<Dashboard />);
 
     expect(getByText("123 Street")).toBeInTheDocument();
+  });
+
+  it("displays user DOB from auth context", () => {
+    useAuth.mockReturnValue([
+      {
+        user: {
+          name: "John Doe",
+          email: "test@example.com",
+          address: "123 Street",
+          phone: "1234567890",
+          DOB: "1990-01-01",
+        },
+      },
+      jest.fn(),
+    ]);
+
+    const { getByText } = render(<Dashboard />);
+
+    expect(getByText("1990-01-01")).toBeInTheDocument();
   });
 
   it("handles null/undefined auth", () => {

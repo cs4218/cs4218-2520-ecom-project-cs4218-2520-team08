@@ -7,6 +7,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -23,6 +24,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -41,6 +43,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -58,6 +61,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -74,6 +78,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -92,6 +97,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -109,6 +115,7 @@ describe("userModel", () => {
       email: "test@example.com",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -125,6 +132,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -142,6 +150,7 @@ describe("userModel", () => {
       email: "test@example.com",
       password: "password123",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -158,6 +167,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -175,6 +185,7 @@ describe("userModel", () => {
       email: "test@example.com",
       password: "password123",
       phone: "1234567890",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -191,6 +202,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -202,6 +214,41 @@ describe("userModel", () => {
     expect(addressPath.instance).toBe("Mixed");
   });
 
+  it("should require DOB field", () => {
+    const user = new userModel({
+      name: "Test User",
+      email: "test@example.com",
+      password: "password123",
+      phone: "1234567890",
+      address: "123 Street",
+      answer: "Football",
+    });
+
+    const error = user.validateSync();
+
+    expect(error).toBeDefined();
+    expect(error.errors.DOB).toBeDefined();
+  });
+
+  it("should have DOB field of type String", () => {
+    const user = new userModel({
+      name: "Test User",
+      email: "test@example.com",
+      password: "password123",
+      phone: "1234567890",
+      address: "123 Street",
+      DOB: "1990-01-01",
+      answer: "Football",
+    });
+
+    const validationError = user.validateSync();
+    expect(validationError).toBeUndefined();
+
+    const schema = userModel.schema;
+    const dobPath = schema.path("DOB");
+    expect(dobPath.instance).toBe("String");
+  });
+
   it("should require answer field", () => {
     const user = new userModel({
       name: "Test User",
@@ -209,6 +256,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
     });
 
     const error = user.validateSync();
@@ -224,6 +272,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -242,6 +291,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -255,6 +305,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     });
 
@@ -273,6 +324,7 @@ describe("userModel", () => {
       password: "password123",
       phone: "1234567890",
       address: "123 Street",
+      DOB: "1990-01-01",
       answer: "Football",
     };
 
@@ -285,6 +337,7 @@ describe("userModel", () => {
     expect(user.password).toBe("password123");
     expect(user.phone).toBe("1234567890");
     expect(user.address).toBe("123 Street");
+    expect(user.DOB).toBe("1990-01-01");
     expect(user.answer).toBe("Football");
     expect(user.role).toBe(0);
   });
