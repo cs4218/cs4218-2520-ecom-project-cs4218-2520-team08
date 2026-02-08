@@ -88,7 +88,7 @@ function renderUpdateProduct() {
   );
 }
 
-describe("UpdateProduct — high coverage", () => {
+describe("UpdateProduct", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

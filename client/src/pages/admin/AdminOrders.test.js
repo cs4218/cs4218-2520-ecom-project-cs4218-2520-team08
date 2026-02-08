@@ -1,6 +1,6 @@
-// AdminOrders.test.js
+// client/src/pages/admin/AdminOrders.test.js
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import axios from "axios";
 import { MemoryRouter } from "react-router-dom";
@@ -54,7 +54,7 @@ function renderComponent() {
   );
 }
 
-describe("AdminOrders — deterministic high coverage", () => {
+describe("AdminOrders", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -86,12 +86,17 @@ describe("AdminOrders — deterministic high coverage", () => {
 
     renderComponent();
 
-    // Wait for order row to exist BEFORE looking for select
     await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
 
     expect(screen.getByText("Success")).toBeInTheDocument();
     expect(screen.getByText("2 days ago")).toBeInTheDocument();
-    expect(screen.getByText("0")).toBeInTheDocument(); // products length
+
+    // quantity cell is in the table row, but "0" might appear elsewhere too.
+    // safest: locate the row and assert it contains "0"
+    const row = screen.getByText("Alice").closest("tr");
+    expect(row).toBeTruthy();
+    expect(within(row).getByText("0")).toBeInTheDocument();
+
     expect(screen.getByTestId("status-select")).toBeInTheDocument();
   });
 
@@ -123,13 +128,19 @@ describe("AdminOrders — deterministic high coverage", () => {
     await waitFor(() => expect(screen.getByText("Bob")).toBeInTheDocument());
 
     expect(screen.getByText("Failed")).toBeInTheDocument();
-    expect(screen.getByText("1")).toBeInTheDocument(); // quantity
+
+    // Fix: "1" appears in many places. Assert quantity in Bob's row.
+    const row = screen.getByText("Bob").closest("tr");
+    expect(row).toBeTruthy();
+    expect(within(row).getByText("1")).toBeInTheDocument();
 
     // product rendering
     expect(screen.getByText("Laptop Computer")).toBeInTheDocument();
-    expect(screen.getByText("High performance laptop with extra".substring(0, 30))).toBeInTheDocument();
+    expect(
+      screen.getByText("High performance laptop with extra".substring(0, 30))
+    ).toBeInTheDocument();
 
-    // price is split across nodes in your DOM, so use regex
+    // price is split across nodes, use regex
     expect(screen.getByText(/Price\s*:\s*1500/)).toBeInTheDocument();
 
     const img = screen.getByAltText("Laptop Computer");
@@ -141,7 +152,6 @@ describe("AdminOrders — deterministic high coverage", () => {
   test("handleChange success -> PUT called -> re-fetch GET called (covers handleChange try)", async () => {
     useAuth.mockReturnValue([{ token: "t" }, jest.fn()]);
 
-    // initial GET
     axios.get.mockResolvedValueOnce({
       data: [
         {
@@ -155,10 +165,8 @@ describe("AdminOrders — deterministic high coverage", () => {
       ],
     });
 
-    // PUT success
     axios.put.mockResolvedValueOnce({ data: { ok: true } });
 
-    // GET after PUT
     axios.get.mockResolvedValueOnce({
       data: [
         {
@@ -180,10 +188,9 @@ describe("AdminOrders — deterministic high coverage", () => {
     fireEvent.change(select, { target: { value: "Shipped" } });
 
     await waitFor(() =>
-      expect(axios.put).toHaveBeenCalledWith(
-        "/api/v1/auth/order-status/order1",
-        { status: "Shipped" }
-      )
+      expect(axios.put).toHaveBeenCalledWith("/api/v1/auth/order-status/order1", {
+        status: "Shipped",
+      })
     );
 
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));

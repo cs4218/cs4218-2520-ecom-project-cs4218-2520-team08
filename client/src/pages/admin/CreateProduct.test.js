@@ -82,7 +82,7 @@ function renderCreateProduct() {
   );
 }
 
-describe("CreateProduct (Admin Actions) — full green coverage", () => {
+describe("CreateProduct (Admin Actions)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -103,7 +103,7 @@ describe("CreateProduct (Admin Actions) — full green coverage", () => {
     expect(screen.getByText("Create Product")).toBeInTheDocument();
     expect(screen.getByTestId("layout")).toBeInTheDocument();
     expect(screen.getByTestId("admin-menu")).toBeInTheDocument();
-
+    
     await waitFor(() =>
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category")
     );
