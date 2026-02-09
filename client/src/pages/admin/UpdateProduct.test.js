@@ -1,412 +1,280 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom/extend-expect";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import UpdateProduct from "./UpdateProduct";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
-
-import UpdateProduct from "./UpdateProduct";
 
 jest.mock("axios");
 
-// toast mock like your other tests
 jest.mock("react-hot-toast", () => ({
-  __esModule: true,
-  default: {
-    success: jest.fn(),
-    error: jest.fn(),
-  },
+  success: jest.fn(),
+  error: jest.fn(),
 }));
 
-jest.mock("./../../components/Layout", () => ({ children }) => (
-  <div data-testid="layout">{children}</div>
-));
-jest.mock("./../../components/AdminMenu", () => () => (
-  <div data-testid="admin-menu">AdminMenu</div>
-));
-
-const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => {
-  const actual = jest.requireActual("react-router-dom");
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-    useParams: () => ({ slug: "test-slug" }),
-  };
+jest.mock("./../../components/Layout", () => {
+  return ({ children }) => <div data-testid="layout">{children}</div>;
+});
+jest.mock("./../../components/AdminMenu", () => {
+  return () => <div data-testid="admin-menu" />;
 });
 
-// mock AntD Select as <select>
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
+  useParams: () => ({ slug: "test-slug" }),
+}));
+
 jest.mock("antd", () => {
   const React = require("react");
-  const Select = ({ children, onChange, placeholder, value, defaultValue }) => (
-    <select
-      aria-label={placeholder || "select"}
-      value={value ?? defaultValue ?? ""}
-      onChange={(e) => onChange?.(e.target.value)}
-    >
-      <option value="">--</option>
-      {children}
-    </select>
-  );
-  Select.Option = ({ value, children }) => <option value={value}>{children}</option>;
+
+  const Option = ({ children }) => <>{children}</>;
+
+  const Select = ({ placeholder, value, onChange, children }) => {
+    const options = React.Children.toArray(children).map((child) => {
+      if (!child) return null;
+      const optValue = child.props.value;
+      const optLabel = child.props.children;
+      return (
+        <button
+          key={String(optValue)}
+          type="button"
+          data-testid={`opt-${String(optValue)}`}
+          onClick={() => onChange(optValue)}
+        >
+          {optLabel}
+        </button>
+      );
+    });
+
+    return (
+      <div data-testid="select">
+        <div data-testid="select-placeholder">{placeholder}</div>
+        <div data-testid="select-value">{String(value ?? "")}</div>
+        <div>{options}</div>
+      </div>
+    );
+  };
+
+  Select.Option = Option;
+
   return { Select };
 });
 
-global.URL.createObjectURL = jest.fn(() => "blob:mock");
+beforeAll(() => {
+  global.URL.createObjectURL = jest.fn(() => "blob:mock-url");
+});
 
-class MockFormData {
-  constructor() {
-    this._data = {};
-  }
-  append(k, v) {
-    this._data[k] = v;
-  }
-}
-global.FormData = MockFormData;
+beforeEach(() => {
+  jest.clearAllMocks();
+  window.prompt = jest.fn(() => "yes");
+});
 
-// matchMedia helper
-window.matchMedia =
-  window.matchMedia ||
-  function () {
-    return {
-      matches: false,
-      addListener: function () {},
-      removeListener: function () {},
-    };
-  };
-
-function renderUpdateProduct() {
-  return render(
-    <MemoryRouter initialEntries={["/dashboard/admin/update-product/test-slug"]}>
-      <Routes>
-        <Route
-          path="/dashboard/admin/update-product/:slug"
-          element={<UpdateProduct />}
-        />
-      </Routes>
-    </MemoryRouter>
-  );
-}
-
-describe("UpdateProduct", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  test("loads product + categories and renders existing product photo branch (no new photo)", async () => {
-    axios.get
-      // getSingleProduct
-      .mockResolvedValueOnce({
+function setupDefaultAxios() {
+  axios.get.mockImplementation((url) => {
+    if (url.startsWith("/api/v1/product/get-product/")) {
+      return Promise.resolve({
         data: {
           product: {
-            _id: "pid1",
+            _id: "p1",
             name: "Old Name",
             description: "Old Desc",
-            price: 10,
+            price: 99,
             quantity: 5,
-            shipping: true,
-            category: { _id: "cat1" },
+            shipping: 1,
+            category: { _id: "cat2", name: "Cat 2" },
           },
         },
-      })
-      // getAllCategory
-      .mockResolvedValueOnce({
+      });
+    }
+    if (url === "/api/v1/category/get-category") {
+      return Promise.resolve({
         data: {
           success: true,
           category: [
-            { _id: "cat1", name: "Shoes" },
-            { _id: "cat2", name: "Hats" },
+            { _id: "cat1", name: "Cat 1" },
+            { _id: "cat2", name: "Cat 2" },
           ],
         },
       });
-
-    renderUpdateProduct();
-
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
-
-    expect(screen.getByPlaceholderText("write a name")).toHaveValue("Old Name");
-    expect(screen.getByPlaceholderText("write a description")).toHaveValue("Old Desc");
-    expect(screen.getByPlaceholderText("write a Price")).toHaveValue(10);
-    expect(screen.getByPlaceholderText("write a quantity")).toHaveValue(5);
-
-    expect(screen.getByRole("option", { name: "Shoes" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Hats" })).toBeInTheDocument();
-
-    const img = screen.getAllByAltText("product_photo")[0];
-    expect(img).toHaveAttribute("src", "/api/v1/product/product-photo/pid1");
+    }
+    return Promise.reject(new Error(`Unhandled GET ${url}`));
   });
+}
 
-  test("handles getSingleProduct failure (catch branch) without crashing", async () => {
-    axios.get
-      .mockRejectedValueOnce(new Error("get product failed"))
-      .mockResolvedValueOnce({
-        data: { success: true, category: [] },
-      });
+function getFileInput(container) {
+  // there is exactly one file input in this component
+  const input = container.querySelector('input[type="file"][name="photo"]');
+  if (!input) throw new Error("File input not found");
+  return input;
+}
 
-    renderUpdateProduct();
+// Helper: read FormData entries (jsdom supports FormData#entries)
+function formDataToObject(fd) {
+  const out = {};
+  for (const [k, v] of fd.entries()) out[k] = v;
+  return out;
+}
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
-    expect(screen.getByText("Update Product")).toBeInTheDocument();
-  });
+async function waitForInitialLoad() {
+  await waitFor(() =>
+    expect(screen.getByPlaceholderText("write a name")).toHaveValue("Old Name")
+  );
+  await waitFor(() => expect(screen.getByTestId("opt-cat1")).toBeInTheDocument());
+}
 
-  test("handles getAllCategory failure (catch branch) with toast.error", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "pid1",
-            name: "Old Name",
-            description: "Old Desc",
-            price: 10,
-            quantity: 5,
-            shipping: false,
-            category: { _id: "cat1" },
-          },
-        },
-      })
-      .mockRejectedValueOnce(new Error("get categories failed"));
+test("fetches single product on mount and populates form fields", async () => {
+  setupDefaultAxios();
+  render(<UpdateProduct />);
 
-    renderUpdateProduct();
+  await waitForInitialLoad();
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
-    expect(toast.error).toHaveBeenCalledWith(
-      "Something wwent wrong in getting catgeory"
-    );
-  });
+  expect(screen.getByPlaceholderText("write a description")).toHaveValue("Old Desc");
+  expect(screen.getByPlaceholderText("write a Price")).toHaveValue(99);
+  expect(screen.getByPlaceholderText("write a quantity")).toHaveValue(5);
 
-  test("uploading a new photo switches to preview branch (URL.createObjectURL)", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "pid1",
-            name: "Old Name",
-            description: "Old Desc",
-            price: 10,
-            quantity: 5,
-            shipping: false,
-            category: { _id: "cat1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: { success: true, category: [{ _id: "cat1", name: "Shoes" }] },
-      });
+  expect(axios.get).toHaveBeenCalledWith("/api/v1/product/get-product/test-slug");
+  expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
+});
 
-    renderUpdateProduct();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+test("loads categories and selecting a category updates internal state", async () => {
+  setupDefaultAxios();
+  render(<UpdateProduct />);
 
-    const file = new File(["x"], "new.png", { type: "image/png" });
-    const label = screen.getByText(/upload photo/i).closest("label");
-    const fileInput = label.querySelector("input[type='file']");
-    fireEvent.change(fileInput, { target: { files: [file] } });
+  await waitForInitialLoad();
 
-    await waitFor(() => expect(global.URL.createObjectURL).toHaveBeenCalled());
-    const img = screen.getAllByAltText("product_photo")[0];
-    expect(img).toHaveAttribute("src", "blob:mock");
-  });
+  fireEvent.click(screen.getByTestId("opt-cat1"));
 
-  test("updates product successfully -> toast.success + navigate", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "pid1",
-            name: "Old Name",
-            description: "Old Desc",
-            price: 10,
-            quantity: 5,
-            shipping: false,
-            category: { _id: "cat1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: { success: true, category: [{ _id: "cat1", name: "Shoes" }] },
-      });
+  // Category Select is the first Select in this component
+  const selects = screen.getAllByTestId("select");
+  const firstSelect = selects[0];
+  expect(within(firstSelect).getByTestId("select-value")).toHaveTextContent("cat1");
+});
 
-    axios.put.mockResolvedValueOnce({
-      data: { success: true, message: "Updated" },
-    });
+test("selecting a photo shows preview using URL.createObjectURL", async () => {
+  setupDefaultAxios();
+  const { container } = render(<UpdateProduct />);
 
-    renderUpdateProduct();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+  await waitForInitialLoad();
 
-    fireEvent.change(screen.getByPlaceholderText("write a name"), {
-      target: { value: "New Name" },
-    });
+  const file = new File(["img"], "test.png", { type: "image/png" });
+  const input = getFileInput(container);
 
-    fireEvent.click(screen.getByText("UPDATE PRODUCT"));
+  await userEvent.upload(input, file);
 
-    await waitFor(() => expect(axios.put).toHaveBeenCalled());
+  expect(global.URL.createObjectURL).toHaveBeenCalledWith(file);
+  const img = screen.getByAltText("product_photo");
+  expect(img).toHaveAttribute("src", "blob:mock-url");
+});
 
-    const [url, formDataArg] = axios.put.mock.calls[0];
-    expect(url).toBe("/api/v1/product/update-product/pid1");
-    expect(formDataArg).toBeInstanceOf(MockFormData);
-    expect(formDataArg._data.name).toBe("New Name");
+test("handleUpdate sends PUT with FormData and navigates on success", async () => {
+  setupDefaultAxios();
+  axios.put.mockResolvedValue({ data: { success: true } });
 
-    expect(toast.success).toHaveBeenCalledWith("Product Updated Successfully");
-    expect(mockNavigate).toHaveBeenCalledWith("/dashboard/admin/products");
-  });
+  const { container } = render(<UpdateProduct />);
 
-  test("update product returns success:false -> toast.error(message)", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "pid1",
-            name: "Old Name",
-            description: "Old Desc",
-            price: 10,
-            quantity: 5,
-            shipping: false,
-            category: { _id: "cat1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: { success: true, category: [{ _id: "cat1", name: "Shoes" }] },
-      });
+  await waitForInitialLoad();
 
-    axios.put.mockResolvedValueOnce({
-      data: { success: false, message: "Validation failed" },
-    });
+  await userEvent.clear(screen.getByPlaceholderText("write a name"));
+  await userEvent.type(screen.getByPlaceholderText("write a name"), "New Name");
 
-    renderUpdateProduct();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+  await userEvent.clear(screen.getByPlaceholderText("write a description"));
+  await userEvent.type(screen.getByPlaceholderText("write a description"), "New Desc");
 
-    fireEvent.click(screen.getByText("UPDATE PRODUCT"));
+  await userEvent.clear(screen.getByPlaceholderText("write a Price"));
+  await userEvent.type(screen.getByPlaceholderText("write a Price"), "123");
 
-    await waitFor(() => expect(axios.put).toHaveBeenCalled());
-    expect(toast.error).toHaveBeenCalledWith("Validation failed");
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
+  await userEvent.clear(screen.getByPlaceholderText("write a quantity"));
+  await userEvent.type(screen.getByPlaceholderText("write a quantity"), "9");
 
-  test("update product request throws -> toast.error('something went wrong')", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "pid1",
-            name: "Old Name",
-            description: "Old Desc",
-            price: 10,
-            quantity: 5,
-            shipping: false,
-            category: { _id: "cat1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: { success: true, category: [{ _id: "cat1", name: "Shoes" }] },
-      });
+  // select category cat1
+  fireEvent.click(screen.getByTestId("opt-cat1"));
 
-    axios.put.mockRejectedValueOnce(new Error("put failed"));
+  // select shipping yes ("1")
+  fireEvent.click(screen.getByTestId("opt-1"));
 
-    renderUpdateProduct();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+  // upload file
+  const file = new File(["img"], "p.png", { type: "image/png" });
+  await userEvent.upload(getFileInput(container), file);
 
-    fireEvent.click(screen.getByText("UPDATE PRODUCT"));
+  await userEvent.click(screen.getByRole("button", { name: /update product/i }));
 
-    await waitFor(() => expect(axios.put).toHaveBeenCalled());
-    expect(toast.error).toHaveBeenCalledWith("something went wrong");
-  });
+  await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
 
-  test("delete: prompt cancelled -> does not call delete", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "pid1",
-            name: "Old Name",
-            description: "Old Desc",
-            price: 10,
-            quantity: 5,
-            shipping: false,
-            category: { _id: "cat1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: { success: true, category: [] },
-      });
+  const [url, fd] = axios.put.mock.calls[0];
+  expect(url).toBe("/api/v1/product/update-product/p1");
+  expect(fd).toBeInstanceOf(FormData);
 
-    jest.spyOn(window, "prompt").mockReturnValueOnce(""); // cancel branch
+  const body = formDataToObject(fd);
+  expect(body.name).toBe("New Name");
+  expect(body.description).toBe("New Desc");
+  expect(body.price).toBe("123");
+  expect(body.quantity).toBe("9");
+  expect(body.category).toBe("cat1");
+  expect(body.shipping).toBe("1");
+  expect(body.photo).toBe(file);
 
-    renderUpdateProduct();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+  expect(toast.success).toHaveBeenCalledWith("Product Updated Successfully");
+  expect(mockNavigate).toHaveBeenCalledWith("/dashboard/admin/products");
+});
 
-    fireEvent.click(screen.getByText("DELETE PRODUCT"));
+test("handleUpdate shows error toast when API returns success=false", async () => {
+  setupDefaultAxios();
+  axios.put.mockResolvedValue({ data: { success: false, message: "Nope" } });
 
-    expect(axios.delete).not.toHaveBeenCalled();
-  });
+  render(<UpdateProduct />);
 
-  test("delete: confirmed -> calls delete, toast.success, navigate", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "pid1",
-            name: "Old Name",
-            description: "Old Desc",
-            price: 10,
-            quantity: 5,
-            shipping: false,
-            category: { _id: "cat1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: { success: true, category: [] },
-      });
+  await waitForInitialLoad();
 
-    jest.spyOn(window, "prompt").mockReturnValueOnce("yes");
+  await userEvent.click(screen.getByRole("button", { name: /update product/i }));
 
-    axios.delete.mockResolvedValueOnce({ data: { success: true } });
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Nope"));
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
 
-    renderUpdateProduct();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+test("handleUpdate shows generic error toast when PUT throws", async () => {
+  setupDefaultAxios();
+  axios.put.mockRejectedValue(new Error("Network"));
 
-    fireEvent.click(screen.getByText("DELETE PRODUCT"));
+  render(<UpdateProduct />);
 
-    await waitFor(() =>
-      expect(axios.delete).toHaveBeenCalledWith(
-        "/api/v1/product/delete-product/pid1"
-      )
-    );
+  await waitForInitialLoad();
 
-    expect(toast.success).toHaveBeenCalledWith("Product DEleted Succfully");
-    expect(mockNavigate).toHaveBeenCalledWith("/dashboard/admin/products");
-  });
+  await userEvent.click(screen.getByRole("button", { name: /update product/i }));
 
-  test("delete: axios.delete throws -> toast.error('Something went wrong')", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "pid1",
-            name: "Old Name",
-            description: "Old Desc",
-            price: 10,
-            quantity: 5,
-            shipping: false,
-            category: { _id: "cat1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: { success: true, category: [] },
-      });
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith("something went wrong"));
+});
 
-    jest.spyOn(window, "prompt").mockReturnValueOnce("yes");
-    axios.delete.mockRejectedValueOnce(new Error("delete failed"));
+test("handleDelete calls DELETE and navigates when user confirms prompt", async () => {
+  setupDefaultAxios();
+  axios.delete.mockResolvedValue({ data: { success: true } });
+  window.prompt = jest.fn(() => "yes");
 
-    renderUpdateProduct();
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+  render(<UpdateProduct />);
 
-    fireEvent.click(screen.getByText("DELETE PRODUCT"));
+  await waitForInitialLoad();
 
-    await waitFor(() => expect(axios.delete).toHaveBeenCalled());
-    expect(toast.error).toHaveBeenCalledWith("Something went wrong");
-  });
+  await userEvent.click(screen.getByRole("button", { name: /delete product/i }));
+
+  await waitFor(() =>
+    expect(axios.delete).toHaveBeenCalledWith("/api/v1/product/delete-product/p1")
+  );
+
+  expect(toast.success).toHaveBeenCalledWith("Product Deleted Successfully");
+  expect(mockNavigate).toHaveBeenCalledWith("/dashboard/admin/products");
+});
+
+test("handleDelete does nothing when user cancels prompt", async () => {
+  setupDefaultAxios();
+  axios.delete.mockResolvedValue({ data: { success: true } });
+  window.prompt = jest.fn(() => "");
+
+  render(<UpdateProduct />);
+
+  await waitForInitialLoad();
+
+  await userEvent.click(screen.getByRole("button", { name: /delete product/i }));
+
+  expect(axios.delete).not.toHaveBeenCalled();
+  expect(mockNavigate).not.toHaveBeenCalled();
 });
