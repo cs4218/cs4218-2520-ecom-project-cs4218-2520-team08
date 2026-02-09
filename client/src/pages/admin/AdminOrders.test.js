@@ -1,9 +1,11 @@
 // client/src/pages/admin/AdminOrders.test.js
 import React from "react";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import axios from "axios";
 import { MemoryRouter } from "react-router-dom";
+import { act } from "react-dom/test-utils";
+import userEvent from "@testing-library/user-event";
 import AdminOrders from "./AdminOrders";
 
 jest.mock("axios");
@@ -54,6 +56,12 @@ function renderComponent() {
   );
 }
 
+async function actUser(fn) {
+  await act(async () => {
+    await fn();
+  });
+}
+
 describe("AdminOrders", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -86,16 +94,15 @@ describe("AdminOrders", () => {
 
     renderComponent();
 
-    await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
+    expect(await screen.findByText("Alice")).toBeInTheDocument();
 
     expect(screen.getByText("Success")).toBeInTheDocument();
     expect(screen.getByText("2 days ago")).toBeInTheDocument();
 
-    // quantity cell is in the table row, but "0" might appear elsewhere too.
-    // safest: locate the row and assert it contains "0"
     const row = screen.getByText("Alice").closest("tr");
     expect(row).toBeTruthy();
-    expect(within(row).getByText("0")).toBeInTheDocument();
+
+    expect(within(row).getAllByText(/^0$/).length).toBeGreaterThanOrEqual(1);
 
     expect(screen.getByTestId("status-select")).toBeInTheDocument();
   });
@@ -125,22 +132,21 @@ describe("AdminOrders", () => {
 
     renderComponent();
 
-    await waitFor(() => expect(screen.getByText("Bob")).toBeInTheDocument());
+    expect(await screen.findByText("Bob")).toBeInTheDocument();
 
     expect(screen.getByText("Failed")).toBeInTheDocument();
 
-    // Fix: "1" appears in many places. Assert quantity in Bob's row.
     const row = screen.getByText("Bob").closest("tr");
     expect(row).toBeTruthy();
-    expect(within(row).getByText("1")).toBeInTheDocument();
+
+    expect(within(row).getAllByText(/^1$/).length).toBeGreaterThanOrEqual(1);
 
     // product rendering
     expect(screen.getByText("Laptop Computer")).toBeInTheDocument();
-    expect(
-      screen.getByText("High performance laptop with extra".substring(0, 30))
-    ).toBeInTheDocument();
 
-    // price is split across nodes, use regex
+    // description is often truncated in UI; just assert a stable substring
+    expect(screen.getByText(/High performance laptop/i)).toBeInTheDocument();
+
     expect(screen.getByText(/Price\s*:\s*1500/)).toBeInTheDocument();
 
     const img = screen.getByAltText("Laptop Computer");
@@ -182,10 +188,17 @@ describe("AdminOrders", () => {
 
     renderComponent();
 
-    await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
+    expect(await screen.findByText("Alice")).toBeInTheDocument();
 
     const select = screen.getByTestId("status-select");
-    fireEvent.change(select, { target: { value: "Shipped" } });
+    await actUser(async () => {
+      if (userEvent.selectOptions) {
+        await userEvent.selectOptions(select, "Shipped");
+      } else {
+        select.value = "Shipped";
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
 
     await waitFor(() =>
       expect(axios.put).toHaveBeenCalledWith("/api/v1/auth/order-status/order1", {
@@ -200,10 +213,14 @@ describe("AdminOrders", () => {
     useAuth.mockReturnValue([{ token: "t" }, jest.fn()]);
     axios.get.mockRejectedValueOnce(new Error("GET fail"));
 
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
     renderComponent();
 
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
     expect(screen.getByText("All Orders")).toBeInTheDocument();
+
+    logSpy.mockRestore();
   });
 
   test("handleChange catch -> PUT rejects (covers catch block) and does not crash", async () => {
@@ -224,15 +241,25 @@ describe("AdminOrders", () => {
 
     axios.put.mockRejectedValueOnce(new Error("PUT fail"));
 
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
     renderComponent();
 
-    await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
+    expect(await screen.findByText("Alice")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByTestId("status-select"), {
-      target: { value: "cancel" },
+    const select = screen.getByTestId("status-select");
+    await actUser(async () => {
+      if (userEvent.selectOptions) {
+        await userEvent.selectOptions(select, "cancel");
+      } else {
+        select.value = "cancel";
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      }
     });
 
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
     expect(screen.getByText("All Orders")).toBeInTheDocument();
+
+    logSpy.mockRestore();
   });
 });

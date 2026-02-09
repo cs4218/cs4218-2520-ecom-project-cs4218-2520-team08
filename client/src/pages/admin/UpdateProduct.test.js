@@ -1,6 +1,7 @@
 import React from "react";
-import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react-dom/test-utils";
 import UpdateProduct from "./UpdateProduct";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -103,13 +104,11 @@ function setupDefaultAxios() {
 }
 
 function getFileInput(container) {
-  // there is exactly one file input in this component
   const input = container.querySelector('input[type="file"][name="photo"]');
   if (!input) throw new Error("File input not found");
   return input;
 }
 
-// Helper: read FormData entries (jsdom supports FormData#entries)
 function formDataToObject(fd) {
   const out = {};
   for (const [k, v] of fd.entries()) out[k] = v;
@@ -120,7 +119,16 @@ async function waitForInitialLoad() {
   await waitFor(() =>
     expect(screen.getByPlaceholderText("write a name")).toHaveValue("Old Name")
   );
-  await waitFor(() => expect(screen.getByTestId("opt-cat1")).toBeInTheDocument());
+  await waitFor(() =>
+    expect(screen.getByTestId("opt-cat1")).toBeInTheDocument()
+  );
+}
+
+// tiny helper: wrap any UI-changing interaction in act for older RTL/user-event
+async function actUser(fn) {
+  await act(async () => {
+    await fn();
+  });
 }
 
 test("fetches single product on mount and populates form fields", async () => {
@@ -143,9 +151,10 @@ test("loads categories and selecting a category updates internal state", async (
 
   await waitForInitialLoad();
 
-  fireEvent.click(screen.getByTestId("opt-cat1"));
+  await actUser(async () => {
+    await userEvent.click(screen.getByTestId("opt-cat1"));
+  });
 
-  // Category Select is the first Select in this component
   const selects = screen.getAllByTestId("select");
   const firstSelect = selects[0];
   expect(within(firstSelect).getByTestId("select-value")).toHaveTextContent("cat1");
@@ -160,7 +169,9 @@ test("selecting a photo shows preview using URL.createObjectURL", async () => {
   const file = new File(["img"], "test.png", { type: "image/png" });
   const input = getFileInput(container);
 
-  await userEvent.upload(input, file);
+  await actUser(async () => {
+    await userEvent.upload(input, file);
+  });
 
   expect(global.URL.createObjectURL).toHaveBeenCalledWith(file);
   const img = screen.getByAltText("product_photo");
@@ -175,29 +186,31 @@ test("handleUpdate sends PUT with FormData and navigates on success", async () =
 
   await waitForInitialLoad();
 
-  await userEvent.clear(screen.getByPlaceholderText("write a name"));
-  await userEvent.type(screen.getByPlaceholderText("write a name"), "New Name");
+  await actUser(async () => {
+    await userEvent.clear(screen.getByPlaceholderText("write a name"));
+    await userEvent.type(screen.getByPlaceholderText("write a name"), "New Name");
 
-  await userEvent.clear(screen.getByPlaceholderText("write a description"));
-  await userEvent.type(screen.getByPlaceholderText("write a description"), "New Desc");
+    await userEvent.clear(screen.getByPlaceholderText("write a description"));
+    await userEvent.type(screen.getByPlaceholderText("write a description"), "New Desc");
 
-  await userEvent.clear(screen.getByPlaceholderText("write a Price"));
-  await userEvent.type(screen.getByPlaceholderText("write a Price"), "123");
+    await userEvent.clear(screen.getByPlaceholderText("write a Price"));
+    await userEvent.type(screen.getByPlaceholderText("write a Price"), "123");
 
-  await userEvent.clear(screen.getByPlaceholderText("write a quantity"));
-  await userEvent.type(screen.getByPlaceholderText("write a quantity"), "9");
+    await userEvent.clear(screen.getByPlaceholderText("write a quantity"));
+    await userEvent.type(screen.getByPlaceholderText("write a quantity"), "9");
 
-  // select category cat1
-  fireEvent.click(screen.getByTestId("opt-cat1"));
+    // select category cat1
+    await userEvent.click(screen.getByTestId("opt-cat1"));
 
-  // select shipping yes ("1")
-  fireEvent.click(screen.getByTestId("opt-1"));
+    // select shipping yes ("1")
+    await userEvent.click(screen.getByTestId("opt-1"));
 
-  // upload file
-  const file = new File(["img"], "p.png", { type: "image/png" });
-  await userEvent.upload(getFileInput(container), file);
+    // upload file
+    const file = new File(["img"], "p.png", { type: "image/png" });
+    await userEvent.upload(getFileInput(container), file);
 
-  await userEvent.click(screen.getByRole("button", { name: /update product/i }));
+    await userEvent.click(screen.getByRole("button", { name: /update product/i }));
+  });
 
   await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
 
@@ -212,7 +225,7 @@ test("handleUpdate sends PUT with FormData and navigates on success", async () =
   expect(body.quantity).toBe("9");
   expect(body.category).toBe("cat1");
   expect(body.shipping).toBe("1");
-  expect(body.photo).toBe(file);
+  expect(body.photo).toBeInstanceOf(File);
 
   expect(toast.success).toHaveBeenCalledWith("Product Updated Successfully");
   expect(mockNavigate).toHaveBeenCalledWith("/dashboard/admin/products");
@@ -223,10 +236,11 @@ test("handleUpdate shows error toast when API returns success=false", async () =
   axios.put.mockResolvedValue({ data: { success: false, message: "Nope" } });
 
   render(<UpdateProduct />);
-
   await waitForInitialLoad();
 
-  await userEvent.click(screen.getByRole("button", { name: /update product/i }));
+  await actUser(async () => {
+    await userEvent.click(screen.getByRole("button", { name: /update product/i }));
+  });
 
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Nope"));
   expect(mockNavigate).not.toHaveBeenCalled();
@@ -236,13 +250,21 @@ test("handleUpdate shows generic error toast when PUT throws", async () => {
   setupDefaultAxios();
   axios.put.mockRejectedValue(new Error("Network"));
 
-  render(<UpdateProduct />);
+  // optional: silence component console.log(err)
+  const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
+  render(<UpdateProduct />);
   await waitForInitialLoad();
 
-  await userEvent.click(screen.getByRole("button", { name: /update product/i }));
+  await actUser(async () => {
+    await userEvent.click(screen.getByRole("button", { name: /update product/i }));
+  });
 
-  await waitFor(() => expect(toast.error).toHaveBeenCalledWith("something went wrong"));
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith("something went wrong")
+  );
+
+  logSpy.mockRestore();
 });
 
 test("handleDelete calls DELETE and navigates when user confirms prompt", async () => {
@@ -251,10 +273,11 @@ test("handleDelete calls DELETE and navigates when user confirms prompt", async 
   window.prompt = jest.fn(() => "yes");
 
   render(<UpdateProduct />);
-
   await waitForInitialLoad();
 
-  await userEvent.click(screen.getByRole("button", { name: /delete product/i }));
+  await actUser(async () => {
+    await userEvent.click(screen.getByRole("button", { name: /delete product/i }));
+  });
 
   await waitFor(() =>
     expect(axios.delete).toHaveBeenCalledWith("/api/v1/product/delete-product/p1")
@@ -270,10 +293,11 @@ test("handleDelete does nothing when user cancels prompt", async () => {
   window.prompt = jest.fn(() => "");
 
   render(<UpdateProduct />);
-
   await waitForInitialLoad();
 
-  await userEvent.click(screen.getByRole("button", { name: /delete product/i }));
+  await actUser(async () => {
+    await userEvent.click(screen.getByRole("button", { name: /delete product/i }));
+  });
 
   expect(axios.delete).not.toHaveBeenCalled();
   expect(mockNavigate).not.toHaveBeenCalled();

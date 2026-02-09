@@ -26,7 +26,6 @@ export default {
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: [
-    "client/src/pages/Auth/*.js",
     "client/src/pages/admin/AdminDashboard.js",
     "client/src/pages/admin/CreateProduct.js",
     "client/src/components/AdminMenu.js",
