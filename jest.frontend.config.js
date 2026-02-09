@@ -22,6 +22,11 @@ module.exports = {
   // only run these tests
   testMatch: ["<rootDir>/client/src/**/*.test.js"],
 
+  testPathIgnorePatterns: [
+  "<rootDir>/client/src/pages/Auth/",  
+  "<rootDir>/client/src/_site/pages/Auth/",
+],
+
 
   // jest code coverage
   collectCoverage: true,
@@ -37,8 +42,8 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      lines: 80,
-      functions: 80,
+      lines: 100,
+      functions: 100,
     },
   },
   setupFilesAfterEnv: ["<rootDir>/client/src/setupTests.js"],

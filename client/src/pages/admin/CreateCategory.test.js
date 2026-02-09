@@ -1,6 +1,7 @@
 // CreateCategory.test.js
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act } from "react-dom/test-utils";
 import "@testing-library/jest-dom/extend-expect";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -8,15 +9,22 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 
 import CreateCategory from "../../pages/admin/CreateCategory";
 
+const flushPromises = () => new Promise((r) => setTimeout(r, 0));
+beforeAll(() => {
+  jest.spyOn(console, "log").mockImplementation(() => {});
+});
+
+
 beforeAll(() => {
   jest.spyOn(console, "error").mockImplementation((msg, ...args) => {
+    // keep your key warning suppressed
     if (
       typeof msg === "string" &&
       msg.includes('Each child in a list should have a unique "key" prop')
     ) {
       return;
     }
-    console.warn(msg, ...args);
+    console.error(msg, ...args);
   });
 });
 
@@ -59,17 +67,33 @@ jest.mock("antd", () => ({
     ) : null,
 }));
 
-function renderPage() {
-  return render(
-    <MemoryRouter initialEntries={["/dashboard/admin/create-category"]}>
-      <Routes>
-        <Route
-          path="/dashboard/admin/create-category"
-          element={<CreateCategory />}
-        />
-      </Routes>
-    </MemoryRouter>
-  );
+async function renderPage() {
+  let utils;
+  await act(async () => {
+    utils = render(
+      <MemoryRouter initialEntries={["/dashboard/admin/create-category"]}>
+        <Routes>
+          <Route
+            path="/dashboard/admin/create-category"
+            element={<CreateCategory />}
+          />
+        </Routes>
+      </MemoryRouter>
+    );
+  });
+
+  // allow mount useEffect GET + any setState to settle inside act
+  await act(async () => {
+    await flushPromises();
+  });
+
+  return utils;
+}
+
+async function actDo(fn) {
+  await act(async () => {
+    await fn();
+  });
 }
 
 describe("CreateCategory (pages/admin) — coverage boost", () => {
@@ -80,7 +104,7 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
   });
 
   test("renders base page chrome (Layout/AdminMenu/table headers) + calls GET on mount", async () => {
-    renderPage();
+    await renderPage();
 
     expect(screen.getByTestId("layout")).toBeInTheDocument();
     expect(screen.getByTestId("admin-menu")).toBeInTheDocument();
@@ -104,7 +128,7 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
       },
     });
 
-    renderPage();
+    await renderPage();
 
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
     expect(screen.getByText("Hats")).toBeInTheDocument();
@@ -117,7 +141,7 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
       data: { success: false, category: [{ _id: "c1", name: "Shoes" }] },
     });
 
-    renderPage();
+    await renderPage();
 
     await waitFor(() =>
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category")
@@ -128,7 +152,7 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
   test("GET rejects -> toast.error in catch", async () => {
     axios.get.mockRejectedValueOnce(new Error("GET fail"));
 
-    renderPage();
+    await renderPage();
 
     await waitFor(() =>
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category")
@@ -142,7 +166,7 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
   test("GET resolves malformed {} -> throws inside try -> toast.error catch", async () => {
     axios.get.mockResolvedValueOnce({}); // no data => data.success throws
 
-    renderPage();
+    await renderPage();
 
     await waitFor(() =>
       expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category")
@@ -154,25 +178,22 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
   });
 
   test("CREATE success -> toast.success + refresh GET -> new row appears", async () => {
-    // mount: empty
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-
-    // create
     axios.post.mockResolvedValueOnce({ data: { success: true } });
-
-    // refresh after create
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "NewCat" }] },
     });
 
-    renderPage();
+    await renderPage();
 
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(1));
 
-    fireEvent.change(screen.getByLabelText("category-input"), {
-      target: { value: "NewCat" },
+    await actDo(async () => {
+      fireEvent.change(screen.getByLabelText("category-input"), {
+        target: { value: "NewCat" },
+      });
+      fireEvent.click(screen.getByText("SUBMIT"));
     });
-    fireEvent.click(screen.getByText("SUBMIT"));
 
     await waitFor(() =>
       expect(axios.post).toHaveBeenCalledWith(
@@ -192,13 +213,15 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
       data: { success: false, message: "Already exists" },
     });
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByLabelText("category-input"), {
-      target: { value: "Dup" },
+    await actDo(async () => {
+      fireEvent.change(screen.getByLabelText("category-input"), {
+        target: { value: "Dup" },
+      });
+      fireEvent.click(screen.getByText("SUBMIT"));
     });
-    fireEvent.click(screen.getByText("SUBMIT"));
 
     await waitFor(() => expect(axios.post).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Already exists");
@@ -207,13 +230,15 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
   test("CREATE rejects -> toast.error catch", async () => {
     axios.post.mockRejectedValueOnce(new Error("POST fail"));
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByLabelText("category-input"), {
-      target: { value: "X" },
+    await actDo(async () => {
+      fireEvent.change(screen.getByLabelText("category-input"), {
+        target: { value: "X" },
+      });
+      fireEvent.click(screen.getByText("SUBMIT"));
     });
-    fireEvent.click(screen.getByText("SUBMIT"));
 
     await waitFor(() => expect(axios.post).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("somthing went wrong in input form");
@@ -222,13 +247,15 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
   test("CREATE resolves data:undefined -> else reads data.message -> throws -> catch toast.error", async () => {
     axios.post.mockResolvedValueOnce({ data: undefined });
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByLabelText("category-input"), {
-      target: { value: "BadResp" },
+    await actDo(async () => {
+      fireEvent.change(screen.getByLabelText("category-input"), {
+        target: { value: "BadResp" },
+      });
+      fireEvent.click(screen.getByText("SUBMIT"));
     });
-    fireEvent.click(screen.getByText("SUBMIT"));
 
     await waitFor(() => expect(axios.post).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("somthing went wrong in input form");
@@ -239,16 +266,20 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
     });
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Edit"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Edit"));
+    });
     expect(screen.getByTestId("modal")).toBeInTheDocument();
 
     const modalInput = screen.getAllByLabelText("category-input")[1];
     expect(modalInput).toHaveValue("Shoes");
 
-    fireEvent.click(screen.getByText("CLOSE"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("CLOSE"));
+    });
     expect(screen.queryByTestId("modal")).not.toBeInTheDocument();
   });
 
@@ -263,17 +294,20 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
       data: { success: true, category: [{ _id: "c1", name: "Shoes2" }] },
     });
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Edit"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Edit"));
+    });
     await waitFor(() => expect(screen.getByTestId("modal")).toBeInTheDocument());
 
     const modalInput = screen.getAllByLabelText("category-input")[1];
-    fireEvent.change(modalInput, { target: { value: "Shoes2" } });
-
-    const submits = await screen.findAllByText("SUBMIT");
-    fireEvent.click(submits[1]);
+    await actDo(async () => {
+      fireEvent.change(modalInput, { target: { value: "Shoes2" } });
+      const submits = await screen.findAllByText("SUBMIT");
+      fireEvent.click(submits[1]);
+    });
 
     await waitFor(() =>
       expect(axios.put).toHaveBeenCalledWith(
@@ -290,7 +324,9 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     );
     expect(screen.getByText("Shoes2")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("Edit"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Edit"));
+    });
     const reopenedModalInput = screen.getAllByLabelText("category-input")[1];
     expect(reopenedModalInput).toHaveValue("Shoes2");
   });
@@ -304,14 +340,18 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
       data: { success: false, message: "Update failed" },
     });
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Edit"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Edit"));
+    });
     await waitFor(() => expect(screen.getByTestId("modal")).toBeInTheDocument());
 
-    const submits = await screen.findAllByText("SUBMIT");
-    fireEvent.click(submits[1]);
+    await actDo(async () => {
+      const submits = await screen.findAllByText("SUBMIT");
+      fireEvent.click(submits[1]);
+    });
 
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Update failed");
@@ -324,14 +364,18 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
 
     axios.put.mockRejectedValueOnce(new Error("PUT fail"));
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Edit"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Edit"));
+    });
     await waitFor(() => expect(screen.getByTestId("modal")).toBeInTheDocument());
 
-    const submits = await screen.findAllByText("SUBMIT");
-    fireEvent.click(submits[1]);
+    await actDo(async () => {
+      const submits = await screen.findAllByText("SUBMIT");
+      fireEvent.click(submits[1]);
+    });
 
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");
@@ -344,14 +388,18 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
 
     axios.put.mockResolvedValueOnce({}); // no data => data.success throws
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Edit"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Edit"));
+    });
     await waitFor(() => expect(screen.getByTestId("modal")).toBeInTheDocument());
 
-    const submits = await screen.findAllByText("SUBMIT");
-    fireEvent.click(submits[1]);
+    await actDo(async () => {
+      const submits = await screen.findAllByText("SUBMIT");
+      fireEvent.click(submits[1]);
+    });
 
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");
@@ -368,10 +416,12 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
       data: { success: true, category: [] },
     });
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Delete"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+    });
 
     await waitFor(() =>
       expect(axios.delete).toHaveBeenCalledWith(
@@ -396,10 +446,12 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
       data: { success: false, message: "Delete failed" },
     });
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Delete"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+    });
 
     await waitFor(() => expect(axios.delete).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Delete failed");
@@ -412,10 +464,12 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
 
     axios.delete.mockRejectedValueOnce(new Error("DELETE fail"));
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Delete"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+    });
 
     await waitFor(() => expect(axios.delete).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");
@@ -428,10 +482,12 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
 
     axios.delete.mockResolvedValueOnce({ data: undefined }); // data.success throws
 
-    renderPage();
+    await renderPage();
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Delete"));
+    await actDo(async () => {
+      fireEvent.click(screen.getByText("Delete"));
+    });
 
     await waitFor(() => expect(axios.delete).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");

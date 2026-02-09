@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1770644073274" clover="3.2.0">
-  <project timestamp="1770644073274" name="All files">
+<coverage generated="1770648994769" clover="3.2.0">
+  <project timestamp="1770648994769" name="All files">
     <metrics statements="212" coveredstatements="204" conditionals="38" coveredconditionals="34" methods="53" coveredmethods="53" elements="303" coveredelements="291" complexity="0" loc="212" ncloc="212" packages="3" files="8" classes="8"/>
     <package name="components">
       <metrics statements="2" coveredstatements="2" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
@@ -56,12 +56,12 @@
       <file name="CreateCategory.js" path="/Users/shika/Documents/Uni/cs4218-2520-ecom-project-cs4218-2520-team08/client/src/pages/admin/CreateCategory.js">
         <metrics statements="52" coveredstatements="52" conditionals="8" coveredconditionals="8" methods="10" coveredmethods="10"/>
         <line num="8" count="1" type="stmt"/>
-        <line num="9" count="48" type="stmt"/>
-        <line num="10" count="47" type="stmt"/>
-        <line num="11" count="47" type="stmt"/>
-        <line num="12" count="47" type="stmt"/>
-        <line num="13" count="47" type="stmt"/>
-        <line num="15" count="47" type="stmt"/>
+        <line num="9" count="49" type="stmt"/>
+        <line num="10" count="48" type="stmt"/>
+        <line num="11" count="48" type="stmt"/>
+        <line num="12" count="48" type="stmt"/>
+        <line num="13" count="48" type="stmt"/>
+        <line num="15" count="48" type="stmt"/>
         <line num="16" count="4" type="stmt"/>
         <line num="17" count="4" type="stmt"/>
         <line num="18" count="4" type="stmt"/>
@@ -71,16 +71,16 @@
         <line num="25" count="2" type="stmt"/>
         <line num="28" count="2" type="stmt"/>
         <line num="29" count="2" type="stmt"/>
-        <line num="34" count="47" type="stmt"/>
+        <line num="34" count="48" type="stmt"/>
         <line num="35" count="21" type="stmt"/>
         <line num="36" count="21" type="stmt"/>
         <line num="37" count="20" type="cond" truecount="2" falsecount="0"/>
         <line num="38" count="18" type="stmt"/>
         <line num="41" count="2" type="stmt"/>
         <line num="42" count="2" type="stmt"/>
-        <line num="46" count="47" type="stmt"/>
+        <line num="46" count="48" type="stmt"/>
         <line num="47" count="18" type="stmt"/>
-        <line num="51" count="47" type="stmt"/>
+        <line num="51" count="48" type="stmt"/>
         <line num="52" count="4" type="stmt"/>
         <line num="53" count="4" type="stmt"/>
         <line num="54" count="4" type="stmt"/>
@@ -92,7 +92,7 @@
         <line num="63" count="1" type="stmt"/>
         <line num="65" count="1" type="stmt"/>
         <line num="68" count="2" type="stmt"/>
-        <line num="72" count="47" type="stmt"/>
+        <line num="72" count="48" type="stmt"/>
         <line num="73" count="4" type="stmt"/>
         <line num="74" count="4" type="stmt"/>
         <line num="77" count="3" type="cond" truecount="2" falsecount="0"/>
@@ -100,7 +100,7 @@
         <line num="80" count="1" type="stmt"/>
         <line num="82" count="1" type="stmt"/>
         <line num="85" count="2" type="stmt"/>
-        <line num="88" count="47" type="stmt"/>
+        <line num="88" count="48" type="stmt"/>
         <line num="114" count="21" type="stmt"/>
         <line num="121" count="6" type="stmt"/>
         <line num="122" count="6" type="stmt"/>
@@ -112,25 +112,25 @@
         <metrics statements="46" coveredstatements="43" conditionals="12" coveredconditionals="9" methods="12" coveredmethods="12"/>
         <line num="8" count="1" type="stmt"/>
         <line num="10" count="1" type="stmt"/>
-        <line num="11" count="69" type="stmt"/>
-        <line num="12" count="69" type="stmt"/>
-        <line num="13" count="68" type="stmt"/>
-        <line num="14" count="68" type="stmt"/>
-        <line num="15" count="68" type="stmt"/>
-        <line num="16" count="68" type="stmt"/>
-        <line num="17" count="68" type="stmt"/>
-        <line num="18" count="68" type="stmt"/>
-        <line num="19" count="68" type="stmt"/>
-        <line num="22" count="68" type="stmt"/>
+        <line num="11" count="79" type="stmt"/>
+        <line num="12" count="79" type="stmt"/>
+        <line num="13" count="79" type="stmt"/>
+        <line num="14" count="79" type="stmt"/>
+        <line num="15" count="79" type="stmt"/>
+        <line num="16" count="79" type="stmt"/>
+        <line num="17" count="79" type="stmt"/>
+        <line num="18" count="79" type="stmt"/>
+        <line num="19" count="79" type="stmt"/>
+        <line num="22" count="79" type="stmt"/>
         <line num="23" count="31" type="stmt"/>
         <line num="24" count="31" type="stmt"/>
         <line num="25" count="28" type="cond" truecount="2" falsecount="0"/>
         <line num="26" count="27" type="stmt"/>
         <line num="29" count="3" type="stmt"/>
         <line num="30" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="34" count="68" type="stmt"/>
+        <line num="34" count="79" type="stmt"/>
         <line num="35" count="31" type="stmt"/>
-        <line num="39" count="68" type="stmt"/>
+        <line num="39" count="79" type="stmt"/>
         <line num="40" count="7" type="stmt"/>
         <line num="41" count="7" type="stmt"/>
         <line num="42" count="7" type="stmt"/>
@@ -147,9 +147,9 @@
         <line num="59" count="0" type="stmt"/>
         <line num="62" count="0" type="stmt"/>
         <line num="63" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="67" count="68" type="stmt"/>
+        <line num="67" count="79" type="stmt"/>
         <line num="84" count="4" type="stmt"/>
-        <line num="88" count="23" type="stmt"/>
+        <line num="88" count="40" type="stmt"/>
         <line num="100" count="4" type="stmt"/>
         <line num="123" count="2" type="stmt"/>
         <line num="132" count="2" type="stmt"/>
