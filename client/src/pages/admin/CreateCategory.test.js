@@ -8,6 +8,18 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 
 import CreateCategory from "../../pages/admin/CreateCategory";
 
+beforeAll(() => {
+  jest.spyOn(console, "error").mockImplementation((msg, ...args) => {
+    if (
+      typeof msg === "string" &&
+      msg.includes('Each child in a list should have a unique "key" prop')
+    ) {
+      return;
+    }
+    console.warn(msg, ...args);
+  });
+});
+
 jest.mock("axios");
 
 jest.mock("react-hot-toast", () => ({
@@ -172,7 +184,7 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     expect(toast.success).toHaveBeenCalledWith("NewCat is created");
 
     await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
-    expect(screen.getByText("NewCat")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("NewCat")).toBeInTheDocument());
   });
 
   test("CREATE success:false -> toast.error(data.message)", async () => {
@@ -222,7 +234,6 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     expect(toast.error).toHaveBeenCalledWith("somthing went wrong in input form");
   });
 
-
   test("Edit opens modal, seeds updatedName, CLOSE triggers onCancel (setVisible false)", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
@@ -241,7 +252,6 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     expect(screen.queryByTestId("modal")).not.toBeInTheDocument();
   });
 
-
   test("UPDATE success -> toast.success + resets modal state + refresh renders updated row", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "c1", name: "Shoes" }] },
@@ -257,11 +267,13 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Edit"));
+    await waitFor(() => expect(screen.getByTestId("modal")).toBeInTheDocument());
 
     const modalInput = screen.getAllByLabelText("category-input")[1];
     fireEvent.change(modalInput, { target: { value: "Shoes2" } });
 
-    fireEvent.click(screen.getAllByText("SUBMIT")[1]);
+    const submits = await screen.findAllByText("SUBMIT");
+    fireEvent.click(submits[1]);
 
     await waitFor(() =>
       expect(axios.put).toHaveBeenCalledWith(
@@ -296,7 +308,10 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Edit"));
-    fireEvent.click(screen.getAllByText("SUBMIT")[1]);
+    await waitFor(() => expect(screen.getByTestId("modal")).toBeInTheDocument());
+
+    const submits = await screen.findAllByText("SUBMIT");
+    fireEvent.click(submits[1]);
 
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Update failed");
@@ -313,7 +328,10 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Edit"));
-    fireEvent.click(screen.getAllByText("SUBMIT")[1]);
+    await waitFor(() => expect(screen.getByTestId("modal")).toBeInTheDocument());
+
+    const submits = await screen.findAllByText("SUBMIT");
+    fireEvent.click(submits[1]);
 
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");
@@ -330,12 +348,14 @@ describe("CreateCategory (pages/admin) — coverage boost", () => {
     await waitFor(() => expect(screen.getByText("Shoes")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Edit"));
-    fireEvent.click(screen.getAllByText("SUBMIT")[1]);
+    await waitFor(() => expect(screen.getByTestId("modal")).toBeInTheDocument());
+
+    const submits = await screen.findAllByText("SUBMIT");
+    fireEvent.click(submits[1]);
 
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Somtihing went wrong");
   });
-
 
   test("DELETE success -> toast.success + refresh removes row", async () => {
     axios.get.mockResolvedValueOnce({
