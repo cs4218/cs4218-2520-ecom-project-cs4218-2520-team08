@@ -379,6 +379,22 @@ describe("productPhotoController", () => {
     expect(res.send).toHaveBeenCalledWith(mockProduct.photo.data);
   });
 
+  it("should not send response when photo data is missing", async () => {
+    // Arrange
+    const mockProduct = { photo: {} };
+    productModel.findById.mockReturnValue(makeQuery(mockProduct));
+    const req = makeReq({ params: { pid: "pid" } });
+    const res = makeRes();
+
+    // Act
+    await productPhotoController(req, res);
+
+    // Assert
+    expect(res.set).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalledWith(200);
+    expect(res.send).not.toHaveBeenCalled();
+  });
+
   it("should return error on failure", async () => {
     // Arrange
     productModel.findById.mockImplementation(() => {
@@ -949,6 +965,22 @@ describe("braintreeTokenController", () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith(error);
   });
+
+  it("should log error when gateway.clientToken.generate throws", async () => {
+    // Arrange
+    const error = new Error("gateway crash");
+    braintree.__mockGateway.clientToken.generate.mockImplementation(() => {
+      throw error;
+    });
+    const req = makeReq();
+    const res = makeRes();
+
+    // Act
+    await braintreeTokenController(req, res);
+
+    // Assert
+    expect(console.log).toHaveBeenCalledWith(error);
+  });
 });
 
 describe("brainTreePaymentController", () => {
@@ -1004,5 +1036,24 @@ describe("brainTreePaymentController", () => {
     // Assert
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith(error);
+  });
+
+  it("should log error when gateway.transaction.sale throws", async () => {
+    // Arrange
+    const error = new Error("gateway crash");
+    braintree.__mockGateway.transaction.sale.mockImplementation(() => {
+      throw error;
+    });
+    const req = makeReq({
+      body: { nonce: "nonce", cart: [{ price: 10 }] },
+      user: { _id: "user1" },
+    });
+    const res = makeRes();
+
+    // Act
+    await brainTreePaymentController(req, res);
+
+    // Assert
+    expect(console.log).toHaveBeenCalledWith(error);
   });
 });
