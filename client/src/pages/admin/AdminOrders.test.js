@@ -8,6 +8,18 @@ import { act } from "react-dom/test-utils";
 import userEvent from "@testing-library/user-event";
 import AdminOrders from "./AdminOrders";
 
+beforeAll(() => {
+  jest.spyOn(console, "error").mockImplementation((msg, ...args) => {
+    if (
+      typeof msg === "string" &&
+      msg.includes('Each child in a list should have a unique "key" prop')
+    ) {
+      return;
+    }
+    console.error(msg, ...args);
+  });
+});
+
 jest.mock("axios");
 
 jest.mock("../../components/Layout", () => ({ children, title }) => (
@@ -141,12 +153,8 @@ describe("AdminOrders", () => {
 
     expect(within(row).getAllByText(/^1$/).length).toBeGreaterThanOrEqual(1);
 
-    // product rendering
     expect(screen.getByText("Laptop Computer")).toBeInTheDocument();
-
-    // description is often truncated in UI; just assert a stable substring
     expect(screen.getByText(/High performance laptop/i)).toBeInTheDocument();
-
     expect(screen.getByText(/Price\s*:\s*1500/)).toBeInTheDocument();
 
     const img = screen.getByAltText("Laptop Computer");
