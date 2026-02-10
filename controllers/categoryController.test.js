@@ -21,7 +21,7 @@ jest.mock("../models/categoryModel.js", () => {
     return { ...doc, save: mockSave };
   });
 
-  ModelCtor.create = jest.fn(); 
+  ModelCtor.create = jest.fn();
   ModelCtor.findOne = jest.fn();
   ModelCtor.findByIdAndUpdate = jest.fn();
   ModelCtor.find = jest.fn();
@@ -79,7 +79,6 @@ describe("controllers/categoryController.js", () => {
       categoryModel.findOne.mockResolvedValueOnce(null);
       slugify.mockReturnValueOnce("shoes");
 
-    
       categoryModel.create.mockResolvedValueOnce({
         _id: "new1",
         name: "Shoes",
@@ -96,12 +95,12 @@ describe("controllers/categoryController.js", () => {
 
       expect(slugify).toHaveBeenCalledWith("Shoes");
 
-      const createCalled = categoryModel.create.mock.calls.length > 0;
-      const ctorCalled = categoryModel.mock.calls.length > 0;
+      const usedCreate = categoryModel.create.mock.calls.length > 0;
+      const usedCtor = categoryModel.mock.calls.length > 0;
 
-      expect(createCalled || ctorCalled).toBe(true);
+      expect(usedCreate || usedCtor).toBe(true);
 
-      if (createCalled) {
+      if (usedCreate) {
         expect(categoryModel.create).toHaveBeenCalledWith({
           name: "Shoes",
           slug: "shoes",
@@ -139,7 +138,7 @@ describe("controllers/categoryController.js", () => {
       expect(res.send).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
-          message: "Errro in Category", 
+          message: "Error in Category", 
         })
       );
     });
@@ -177,7 +176,9 @@ describe("controllers/categoryController.js", () => {
       const req = { body: { name: "X" }, params: { id: "c1" } };
       const res = mockRes();
 
-      categoryModel.findByIdAndUpdate.mockRejectedValueOnce(new Error("update fail"));
+      categoryModel.findByIdAndUpdate.mockRejectedValueOnce(
+        new Error("update fail")
+      );
 
       await updateCategoryController(req, res);
 
@@ -294,7 +295,9 @@ describe("controllers/categoryController.js", () => {
       const req = { params: { id: "c1" } };
       const res = mockRes();
 
-      categoryModel.findByIdAndDelete.mockRejectedValueOnce(new Error("delete fail"));
+      categoryModel.findByIdAndDelete.mockRejectedValueOnce(
+        new Error("delete fail")
+      );
 
       await deleteCategoryCOntroller(req, res);
 

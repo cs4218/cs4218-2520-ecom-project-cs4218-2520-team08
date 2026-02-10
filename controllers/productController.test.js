@@ -1,8 +1,9 @@
+// controllers/productController.test.js
+
 jest.mock("dotenv", () => ({
   __esModule: true,
   default: { config: jest.fn() },
 }));
-
 
 jest.mock("braintree", () => {
   const mockGenerate = jest.fn();
@@ -103,30 +104,27 @@ function mockRes() {
 }
 
 function chainEndingWithSort(result) {
-  const q = {
-    populate: jest.fn().mockReturnValue(q),
-    select: jest.fn().mockReturnValue(q),
-    limit: jest.fn().mockReturnValue(q),
-    skip: jest.fn().mockReturnValue(q),
-    sort: jest.fn().mockResolvedValue(result),
-  };
+  const q = {};
+  q.populate = jest.fn().mockReturnValue(q);
+  q.select = jest.fn().mockReturnValue(q);
+  q.limit = jest.fn().mockReturnValue(q);
+  q.skip = jest.fn().mockReturnValue(q);
+  q.sort = jest.fn().mockResolvedValue(result);
   return q;
 }
 
 function chainSelectPopulate(result) {
-  const q = {
-    select: jest.fn().mockReturnValue(q),
-    populate: jest.fn().mockResolvedValue(result),
-  };
+  const q = {};
+  q.select = jest.fn().mockReturnValue(q);
+  q.populate = jest.fn().mockResolvedValue(result);
   return q;
 }
 
 function chainSelectLimitPopulate(result) {
-  const q = {
-    select: jest.fn().mockReturnValue(q),
-    limit: jest.fn().mockReturnValue(q),
-    populate: jest.fn().mockResolvedValue(result),
-  };
+  const q = {};
+  q.select = jest.fn().mockReturnValue(q);
+  q.limit = jest.fn().mockReturnValue(q);
+  q.populate = jest.fn().mockResolvedValue(result);
   return q;
 }
 
@@ -136,12 +134,27 @@ function chainEndingWithSelect(result) {
 }
 
 describe("controllers/productController.js", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // optional: silence controller console.log noise
+    jest.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    console.log.mockRestore?.();
+  });
 
   describe("createProductController", () => {
     test("validation: missing name -> 500", async () => {
       const req = {
-        fields: { name: "", description: "d", price: 1, category: "c", quantity: 1, shipping: 1 },
+        fields: {
+          name: "",
+          description: "d",
+          price: 1,
+          category: "c",
+          quantity: 1,
+          shipping: 1,
+        },
         files: { photo: null },
       };
       const res = mockRes();
@@ -155,7 +168,14 @@ describe("controllers/productController.js", () => {
 
     test("validation: missing description -> 500", async () => {
       const req = {
-        fields: { name: "A", description: "", price: 1, category: "c", quantity: 1, shipping: 1 },
+        fields: {
+          name: "A",
+          description: "",
+          price: 1,
+          category: "c",
+          quantity: 1,
+          shipping: 1,
+        },
         files: { photo: null },
       };
       const res = mockRes();
@@ -167,7 +187,14 @@ describe("controllers/productController.js", () => {
 
     test("validation: missing price -> 500", async () => {
       const req = {
-        fields: { name: "A", description: "d", price: "", category: "c", quantity: 1, shipping: 1 },
+        fields: {
+          name: "A",
+          description: "d",
+          price: "",
+          category: "c",
+          quantity: 1,
+          shipping: 1,
+        },
         files: { photo: null },
       };
       const res = mockRes();
@@ -179,7 +206,14 @@ describe("controllers/productController.js", () => {
 
     test("validation: photo too big -> 500 (branch)", async () => {
       const req = {
-        fields: { name: "A", description: "d", price: 1, category: "c", quantity: 1, shipping: 1 },
+        fields: {
+          name: "A",
+          description: "d",
+          price: 1,
+          category: "c",
+          quantity: 1,
+          shipping: 1,
+        },
         files: { photo: { size: 1000001, path: "/tmp/x", type: "image/png" } },
       };
       const res = mockRes();
@@ -195,7 +229,14 @@ describe("controllers/productController.js", () => {
 
     test("happy: creates without photo -> 201", async () => {
       const req = {
-        fields: { name: "Phone", description: "Nice", price: 10, category: "c", quantity: 2, shipping: 1 },
+        fields: {
+          name: "Phone",
+          description: "Nice",
+          price: 10,
+          category: "c",
+          quantity: 2,
+          shipping: 1,
+        },
         files: { photo: null },
       };
       const res = mockRes();
@@ -208,13 +249,23 @@ describe("controllers/productController.js", () => {
       expect(productModel).toHaveBeenCalledWith({ ...req.fields, slug: "phone" });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({ success: true, message: "Product Created Successfully" })
+        expect.objectContaining({
+          success: true,
+          message: "Product Created Successfully",
+        })
       );
     });
 
     test("happy: creates with photo -> reads file -> 201 (branch)", async () => {
       const req = {
-        fields: { name: "Cam", description: "Nice", price: 10, category: "c", quantity: 2, shipping: 1 },
+        fields: {
+          name: "Cam",
+          description: "Nice",
+          price: 10,
+          category: "c",
+          quantity: 2,
+          shipping: 1,
+        },
         files: { photo: { size: 999, path: "/tmp/p.png", type: "image/png" } },
       };
       const res = mockRes();
@@ -231,7 +282,14 @@ describe("controllers/productController.js", () => {
 
     test("error -> 500 Error in crearing product", async () => {
       const req = {
-        fields: { name: "X", description: "d", price: 1, category: "c", quantity: 1, shipping: 1 },
+        fields: {
+          name: "X",
+          description: "d",
+          price: 1,
+          category: "c",
+          quantity: 1,
+          shipping: 1,
+        },
         files: { photo: null },
       };
       const res = mockRes();
@@ -243,7 +301,10 @@ describe("controllers/productController.js", () => {
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({ success: false, message: "Error in crearing product" })
+        expect.objectContaining({
+          success: false,
+          message: "Error in crearing product",
+        })
       );
     });
   });
@@ -252,7 +313,14 @@ describe("controllers/productController.js", () => {
     test("validation: missing category -> 500", async () => {
       const req = {
         params: { pid: "p1" },
-        fields: { name: "X", description: "d", price: 1, category: "", quantity: 1, shipping: 1 },
+        fields: {
+          name: "X",
+          description: "d",
+          price: 1,
+          category: "",
+          quantity: 1,
+          shipping: 1,
+        },
         files: { photo: null },
       };
       const res = mockRes();
@@ -265,7 +333,14 @@ describe("controllers/productController.js", () => {
     test("happy: update without photo -> 201", async () => {
       const req = {
         params: { pid: "p1" },
-        fields: { name: "New", description: "d", price: 10, category: "c", quantity: 1, shipping: 1 },
+        fields: {
+          name: "New",
+          description: "d",
+          price: 10,
+          category: "c",
+          quantity: 1,
+          shipping: 1,
+        },
         files: { photo: null },
       };
       const res = mockRes();
@@ -287,7 +362,14 @@ describe("controllers/productController.js", () => {
     test("happy: update with photo -> reads file -> 201 (branch)", async () => {
       const req = {
         params: { pid: "p1" },
-        fields: { name: "New", description: "d", price: 10, category: "c", quantity: 1, shipping: 1 },
+        fields: {
+          name: "New",
+          description: "d",
+          price: 10,
+          category: "c",
+          quantity: 1,
+          shipping: 1,
+        },
         files: { photo: { size: 500, path: "/tmp/z.png", type: "image/png" } },
       };
       const res = mockRes();
@@ -310,7 +392,14 @@ describe("controllers/productController.js", () => {
     test("error -> 500 Error in Updte product", async () => {
       const req = {
         params: { pid: "p1" },
-        fields: { name: "New", description: "d", price: 10, category: "c", quantity: 1, shipping: 1 },
+        fields: {
+          name: "New",
+          description: "d",
+          price: 10,
+          category: "c",
+          quantity: 1,
+          shipping: 1,
+        },
         files: { photo: null },
       };
       const res = mockRes();
@@ -321,7 +410,10 @@ describe("controllers/productController.js", () => {
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({ success: false, message: "Error in Updte product" })
+        expect.objectContaining({
+          success: false,
+          message: "Error in Updte product",
+        })
       );
     });
   });
@@ -359,7 +451,10 @@ describe("controllers/productController.js", () => {
       const req = {};
       const res = mockRes();
 
-      productModel.find.mockReturnValueOnce(chainEndingWithSort([{ _id: "p1" }, { _id: "p2" }]));
+      productModel.find.mockReturnValueOnce(
+        chainEndingWithSort([{ _id: "p1" }, { _id: "p2" }])
+      );
+
       await getProductController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
@@ -448,7 +543,6 @@ describe("controllers/productController.js", () => {
     });
   });
 
-  // ---------------- productFiltersController ----------------
   describe("productFiltersController", () => {
     test("checked + radio -> args has both (branch)", async () => {
       const req = { body: { checked: ["c1"], radio: [10, 50] } };
@@ -482,7 +576,9 @@ describe("controllers/productController.js", () => {
       productModel.find.mockResolvedValueOnce([{ _id: "p1" }]);
       await productFiltersController(req, res);
 
-      expect(productModel.find).toHaveBeenCalledWith({ price: { $gte: 1, $lte: 2 } });
+      expect(productModel.find).toHaveBeenCalledWith({
+        price: { $gte: 1, $lte: 2 },
+      });
     });
 
     test("error -> 400", async () => {
@@ -538,12 +634,11 @@ describe("controllers/productController.js", () => {
       const req = { params: { page: "2" } };
       const res = mockRes();
 
-      const q = {
-        select: jest.fn().mockReturnValue(q),
-        skip: jest.fn().mockReturnValue(q),
-        limit: jest.fn().mockReturnValue(q),
-        sort: jest.fn().mockResolvedValue([{ _id: "p1" }]),
-      };
+      const q = {};
+      q.select = jest.fn().mockReturnValue(q);
+      q.skip = jest.fn().mockReturnValue(q);
+      q.limit = jest.fn().mockReturnValue(q);
+      q.sort = jest.fn().mockResolvedValue([{ _id: "p1" }]);
 
       productModel.find.mockReturnValueOnce(q);
       await productListController(req, res);
@@ -570,7 +665,9 @@ describe("controllers/productController.js", () => {
       const req = { params: { keyword: "ph" } };
       const res = mockRes();
 
-      productModel.find.mockReturnValueOnce(chainEndingWithSelect([{ _id: "p1" }]));
+      productModel.find.mockReturnValueOnce(
+        chainEndingWithSelect([{ _id: "p1" }])
+      );
       await searchProductController(req, res);
 
       expect(res.json).toHaveBeenCalledWith([{ _id: "p1" }]);
@@ -594,7 +691,9 @@ describe("controllers/productController.js", () => {
       const req = { params: { pid: "p1", cid: "c1" } };
       const res = mockRes();
 
-      productModel.find.mockReturnValueOnce(chainSelectLimitPopulate([{ _id: "p2" }]));
+      productModel.find.mockReturnValueOnce(
+        chainSelectLimitPopulate([{ _id: "p2" }])
+      );
       await realtedProductController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
@@ -653,7 +752,9 @@ describe("controllers/productController.js", () => {
       const req = {};
       const res = mockRes();
 
-      mockGenerate.mockImplementationOnce((_, cb) => cb(new Error("fail"), null));
+      mockGenerate.mockImplementationOnce((_, cb) =>
+        cb(new Error("fail"), null)
+      );
       await braintreeTokenController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
@@ -691,7 +792,9 @@ describe("controllers/productController.js", () => {
       };
       const res = mockRes();
 
-      mockSale.mockImplementationOnce((payload, cb) => cb(new Error("txn fail"), null));
+      mockSale.mockImplementationOnce((payload, cb) =>
+        cb(new Error("txn fail"), null)
+      );
       await brainTreePaymentController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
