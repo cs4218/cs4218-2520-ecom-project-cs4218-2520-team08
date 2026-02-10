@@ -339,6 +339,7 @@ export const braintreeTokenController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+    res.status(500).send(error);
   }
 };
 
@@ -346,8 +347,11 @@ export const braintreeTokenController = async (req, res) => {
 export const brainTreePaymentController = async (req, res) => {
   try {
     const { nonce, cart } = req.body;
+    if (!cart || !Array.isArray(cart)) {
+      return res.status(500).send({ error: "Invalid cart" });
+    }
     let total = 0;
-    cart.map((i) => {
+    cart.forEach((i) => {
       total += i.price;
     });
     let newTransaction = gateway.transaction.sale(
@@ -358,14 +362,19 @@ export const brainTreePaymentController = async (req, res) => {
           submitForSettlement: true,
         },
       },
-      function (error, result) {
+      async function (error, result) {
         if (result) {
-          const order = new orderModel({
-            products: cart,
-            payment: result,
-            buyer: req.user._id,
-          }).save();
-          res.json({ ok: true });
+          try {
+            const order = await new orderModel({
+              products: cart,
+              payment: result,
+              buyer: req.user._id,
+            }).save();
+            res.json({ ok: true });
+          } catch (err) {
+            console.log(err);
+            res.status(500).send(err);
+          }
         } else {
           res.status(500).send(error);
         }
@@ -373,5 +382,6 @@ export const brainTreePaymentController = async (req, res) => {
     );
   } catch (error) {
     console.log(error);
+    res.status(500).send(error);
   }
 };
