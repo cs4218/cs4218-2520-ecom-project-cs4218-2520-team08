@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1770711762055" clover="3.2.0">
-  <project timestamp="1770711762056" name="All files">
+<coverage generated="1770711902324" clover="3.2.0">
+  <project timestamp="1770711902324" name="All files">
     <metrics statements="169" coveredstatements="160" conditionals="36" coveredconditionals="29" methods="22" coveredmethods="22" elements="227" coveredelements="211" complexity="0" loc="169" ncloc="169" packages="1" files="2" classes="2"/>
     <file name="categoryController.js" path="/Users/shika/Documents/Uni/cs4218-2520-ecom-project-cs4218-2520-team08/controllers/categoryController.js">
       <metrics statements="39" coveredstatements="39" conditionals="4" coveredconditionals="4" methods="5" coveredmethods="5"/>
