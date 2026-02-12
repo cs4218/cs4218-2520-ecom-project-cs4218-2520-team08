@@ -72,7 +72,7 @@ export const getProductController = async (req, res) => {
       .sort({ createdAt: -1 });
     res.status(200).send({
       success: true,
-      counTotal: products.length,
+      countTotal: products.length,
       message: "All Products Fetched",
       products,
     });
@@ -111,10 +111,20 @@ export const getSingleProductController = async (req, res) => {
 export const productPhotoController = async (req, res) => {
   try {
     const product = await productModel.findById(req.params.pid).select("photo");
+    if (!product) {
+      return res.status(404).send({
+        success: false,
+        message: "Product Not Found",
+      });
+    }
     if (product.photo.data) {
       res.set("Content-type", product.photo.contentType);
       return res.status(200).send(product.photo.data);
     }
+    return res.status(404).send({
+      success: false,
+      message: "Photo Not Found",
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
