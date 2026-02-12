@@ -3,3 +3,9 @@ node_modules
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/.env
+# coverage files
+coverage/clover.xml
+coverage/coverage-final.json
+coverage/lcov-report/index.html
+coverage/lcov.info
