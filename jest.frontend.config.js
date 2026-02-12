@@ -30,8 +30,8 @@ module.exports = {
   collectCoverageFrom: ["client/src/pages/Auth/**", "client/src/pages/HomePage.js", "client/src/components/Prices.js"],
   coverageThreshold: {
     global: {
-      lines: 0,
-      functions: 0,
+      lines: 100,
+      functions: 100,
     },
   },
   setupFilesAfterEnv: ["<rootDir>/client/src/setupTests.js"],
