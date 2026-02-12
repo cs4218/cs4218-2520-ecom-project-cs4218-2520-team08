@@ -277,6 +277,124 @@ describe("createProductController", () => {
       })
     );
   });
+
+  it("should return error when price is negative", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: -10, category: "c", quantity: 1 },
+      files: {},
+    });
+    const res = makeRes();
+
+    // Act
+    await createProductController(req, res);
+
+    // Assert - negative price should not be accepted
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalledWith(201);
+  });
+
+  it("should return error when quantity is negative", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: -5 },
+      files: {},
+    });
+    const res = makeRes();
+
+    // Act
+    await createProductController(req, res);
+
+    // Assert - negative quantity should not be accepted
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalledWith(201);
+  });
+
+  it("should not treat price of zero as missing", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: 0, category: "c", quantity: 1 },
+      files: {},
+    });
+    const res = makeRes();
+
+    // Act
+    await createProductController(req, res);
+
+    // Assert - price of 0 (free product) should not be treated as "missing"
+    expect(res.send).not.toHaveBeenCalledWith({ error: "Price is Required" });
+  });
+
+  it("should not treat quantity of zero as missing", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: 0 },
+      files: {},
+    });
+    const res = makeRes();
+
+    // Act
+    await createProductController(req, res);
+
+    // Assert - quantity of 0 (out of stock) should not be treated as "missing"
+    expect(res.send).not.toHaveBeenCalledWith({ error: "Quantity is Required" });
+  });
+
+  it("should return error when price is a non-numeric string", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: "not-a-number", category: "c", quantity: 1 },
+      files: {},
+    });
+    const res = makeRes();
+
+    // Act
+    await createProductController(req, res);
+
+    // Assert - non-numeric price should not be accepted
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalledWith(201);
+  });
+
+  it("should return error when quantity is a non-numeric string", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: "not-a-number" },
+      files: {},
+    });
+    const res = makeRes();
+
+    // Act
+    await createProductController(req, res);
+
+    // Assert - non-numeric quantity should not be accepted
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalledWith(201);
+  });
 });
 
 describe("getProductController", () => {
@@ -639,6 +757,130 @@ describe("updateProductController", () => {
         message: "Error in Updating Product",
       })
     );
+  });
+
+  it("should return error when price is negative", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: -10, category: "c", quantity: 1 },
+      files: {},
+      params: { pid: "pid" },
+    });
+    const res = makeRes();
+
+    // Act
+    await updateProductController(req, res);
+
+    // Assert - negative price should not be accepted
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalledWith(201);
+  });
+
+  it("should return error when quantity is negative", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: -5 },
+      files: {},
+      params: { pid: "pid" },
+    });
+    const res = makeRes();
+
+    // Act
+    await updateProductController(req, res);
+
+    // Assert - negative quantity should not be accepted
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalledWith(201);
+  });
+
+  it("should not treat price of zero as missing", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: 0, category: "c", quantity: 1 },
+      files: {},
+      params: { pid: "pid" },
+    });
+    const res = makeRes();
+
+    // Act
+    await updateProductController(req, res);
+
+    // Assert - price of 0 (free product) should not be treated as "missing"
+    expect(res.send).not.toHaveBeenCalledWith({ error: "Price is Required" });
+  });
+
+  it("should not treat quantity of zero as missing", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: 0 },
+      files: {},
+      params: { pid: "pid" },
+    });
+    const res = makeRes();
+
+    // Act
+    await updateProductController(req, res);
+
+    // Assert - quantity of 0 (out of stock) should not be treated as "missing"
+    expect(res.send).not.toHaveBeenCalledWith({ error: "Quantity is Required" });
+  });
+
+  it("should return error when price is a non-numeric string", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: "not-a-number", category: "c", quantity: 1 },
+      files: {},
+      params: { pid: "pid" },
+    });
+    const res = makeRes();
+
+    // Act
+    await updateProductController(req, res);
+
+    // Assert - non-numeric price should not be accepted
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalledWith(201);
+  });
+
+  it("should return error when quantity is a non-numeric string", async () => {
+    // Arrange
+    const mockSave = jest.fn().mockResolvedValue({});
+    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
+    slugify.mockReturnValue("test-slug");
+
+    const req = makeReq({
+      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: "not-a-number" },
+      files: {},
+      params: { pid: "pid" },
+    });
+    const res = makeRes();
+
+    // Act
+    await updateProductController(req, res);
+
+    // Assert - non-numeric quantity should not be accepted
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalledWith(201);
   });
 });
 
@@ -1055,5 +1297,45 @@ describe("brainTreePaymentController", () => {
 
     // Assert
     expect(console.log).toHaveBeenCalledWith(error);
+  });
+
+  it("should not process payment when cart is empty", async () => {
+    // Arrange
+    const saleResult = { id: "tx" };
+    braintree.__mockGateway.transaction.sale.mockImplementation((options, cb) => cb(null, saleResult));
+    const save = jest.fn();
+    orderModel.mockImplementation(() => ({ save }));
+
+    const req = makeReq({
+      body: { nonce: "nonce", cart: [] },
+      user: { _id: "user1" },
+    });
+    const res = makeRes();
+
+    // Act
+    await brainTreePaymentController(req, res);
+
+    // Assert - empty cart (total = 0) should be rejected before reaching payment gateway
+    expect(braintree.__mockGateway.transaction.sale).not.toHaveBeenCalled();
+  });
+
+  it("should not process payment when cart contains negative prices", async () => {
+    // Arrange
+    const saleResult = { id: "tx" };
+    braintree.__mockGateway.transaction.sale.mockImplementation((options, cb) => cb(null, saleResult));
+    const save = jest.fn();
+    orderModel.mockImplementation(() => ({ save }));
+
+    const req = makeReq({
+      body: { nonce: "nonce", cart: [{ price: -10 }, { price: 5 }] },
+      user: { _id: "user1" },
+    });
+    const res = makeRes();
+
+    // Act
+    await brainTreePaymentController(req, res);
+
+    // Assert - cart with negative prices resulting in negative total should be rejected
+    expect(braintree.__mockGateway.transaction.sale).not.toHaveBeenCalled();
   });
 });

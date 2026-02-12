@@ -28,12 +28,20 @@ export const createProductController = async (req, res) => {
         return res.status(500).send({ error: "Name is Required" });
       case !description:
         return res.status(500).send({ error: "Description is Required" });
-      case !price:
+      case price === undefined || price === null:
         return res.status(500).send({ error: "Price is Required" });
+      case isNaN(Number(price)) || Number(price) < 0:
+        return res
+          .status(500)
+          .send({ error: "Price must be a valid non-negative number" });
       case !category:
         return res.status(500).send({ error: "Category is Required" });
-      case !quantity:
+      case quantity === undefined || quantity === null:
         return res.status(500).send({ error: "Quantity is Required" });
+      case isNaN(Number(quantity)) || Number(quantity) < 0:
+        return res
+          .status(500)
+          .send({ error: "Quantity must be a valid non-negative number" });
       case photo && photo.size > 1000000:
         return res
           .status(500)
@@ -155,12 +163,20 @@ export const updateProductController = async (req, res) => {
         return res.status(500).send({ error: "Name is Required" });
       case !description:
         return res.status(500).send({ error: "Description is Required" });
-      case !price:
+      case price === undefined || price === null:
         return res.status(500).send({ error: "Price is Required" });
+      case isNaN(Number(price)) || Number(price) < 0:
+        return res
+          .status(500)
+          .send({ error: "Price must be a valid non-negative number" });
       case !category:
         return res.status(500).send({ error: "Category is Required" });
-      case !quantity:
+      case quantity === undefined || quantity === null:
         return res.status(500).send({ error: "Quantity is Required" });
+      case isNaN(Number(quantity)) || Number(quantity) < 0:
+        return res
+          .status(500)
+          .send({ error: "Quantity must be a valid non-negative number" });
       case photo && photo.size > 1000000:
         return res
           .status(500)
@@ -350,6 +366,12 @@ export const brainTreePaymentController = async (req, res) => {
     cart.map((i) => {
       total += i.price;
     });
+    if (!cart.length || total <= 0) {
+      return res.status(500).send({
+        success: false,
+        message: "Cart is empty or has an invalid total",
+      });
+    }
     let newTransaction = gateway.transaction.sale(
       {
         amount: total,
