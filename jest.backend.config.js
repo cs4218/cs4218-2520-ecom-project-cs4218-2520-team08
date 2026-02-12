@@ -13,8 +13,8 @@ module.exports = {
   collectCoverageFrom: ["controllers/productController.js"],
   coverageThreshold: {
     global: {
-      lines: 0,
-      functions: 0,
+      lines: 100,
+      functions: 100,
     },
   },
 };
