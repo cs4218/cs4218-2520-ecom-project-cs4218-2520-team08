@@ -7,7 +7,7 @@ const CategoryProduct = () => {
   const params = useParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [category, setCategory] = useState([]);
+  const [category, setCategory] = useState({});
 
   useEffect(() => {
     if (params?.slug) getPrductsByCat();
@@ -28,7 +28,7 @@ const CategoryProduct = () => {
     <Layout>
       <div className="container mt-3 category">
         <h4 className="text-center">Category - {category?.name}</h4>
-        <h6 className="text-center">{products?.length} result found </h6>
+        <h6 className="text-center">{products?.length} result{products?.length !== 1 ? "s" : ""} found </h6>
         <div className="row">
           <div className="col-md-9 offset-1">
             <div className="d-flex flex-wrap">
@@ -43,14 +43,14 @@ const CategoryProduct = () => {
                     <div className="card-name-price">
                       <h5 className="card-title">{p.name}</h5>
                       <h5 className="card-title card-price">
-                        {p.price.toLocaleString("en-US", {
+                        {(p.price || 0).toLocaleString("en-US", {
                           style: "currency",
                           currency: "USD",
                         })}
                       </h5>
                     </div>
                     <p className="card-text ">
-                      {p.description.substring(0, 60)}...
+                      {(p.description || "").substring(0, 60)}...
                     </p>
                     <div className="card-name-price">
                       <button
