@@ -31,5 +31,11 @@ module.exports = {
     "client/src/pages/Auth/**",
     "client/src/pages/CartPage.js"
   ],
+  coverageThreshold: {
+    global: {
+      lines: 100,
+      functions: 100,
+    },
+  },
   setupFilesAfterEnv: ["<rootDir>/client/src/setupTests.js"],
 };
