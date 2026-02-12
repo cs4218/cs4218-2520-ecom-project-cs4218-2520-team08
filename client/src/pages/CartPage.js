@@ -21,8 +21,8 @@ const CartPage = () => {
   const totalPrice = () => {
     try {
       let total = 0;
-      cart?.map((item) => {
-        total = total + item.price;
+      cart?.forEach((item) => {
+        total = total + (Number(item.price) || 0);
       });
       return total.toLocaleString("en-US", {
         style: "currency",
@@ -88,7 +88,7 @@ const CartPage = () => {
                 : `Hello  ${auth?.token && auth?.user?.name}`}
               <p className="text-center">
                 {cart?.length
-                  ? `You Have ${cart.length} items in your cart ${
+                  ? `You Have ${cart.length} ${cart.length === 1 ? "item" : "items"} in your cart ${
                       auth?.token ? "" : "please login to checkout !"
                     }`
                   : " Your Cart Is Empty"}
@@ -112,7 +112,7 @@ const CartPage = () => {
                   </div>
                   <div className="col-md-4">
                     <p>{p.name}</p>
-                    <p>{p.description.substring(0, 30)}</p>
+                    <p>{p.description?.substring(0, 30)}</p>
                     <p>Price : {p.price}</p>
                   </div>
                   <div className="col-md-4 cart-remove-btn">
