@@ -20,10 +20,7 @@ const CartPage = () => {
   //total price
   const totalPrice = () => {
     try {
-      let total = 0;
-      cart?.map((item) => {
-        total = total + item.price;
-      });
+      let total = cart?.reduce((acc, item) => acc + item.price, 0) || 0;
       return total.toLocaleString("en-US", {
         style: "currency",
         currency: "USD",
@@ -74,6 +71,7 @@ const CartPage = () => {
       toast.success("Payment Completed Successfully ");
     } catch (error) {
       console.log(error);
+      toast.error("Payment failed");
       setLoading(false);
     }
   };
@@ -112,7 +110,7 @@ const CartPage = () => {
                   </div>
                   <div className="col-md-4">
                     <p>{p.name}</p>
-                    <p>{p.description.substring(0, 30)}</p>
+                    <p>{p.description?.substring(0, 30)}</p>
                     <p>Price : {p.price}</p>
                   </div>
                   <div className="col-md-4 cart-remove-btn">
