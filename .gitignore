@@ -5,7 +5,7 @@ node_modules
 /playwright/.cache/
 /.env
 # coverage files
-coverage/clover.xml
-coverage/coverage-final.json
-coverage/lcov-report/index.html
-coverage/lcov.info
+/coverage/clover.xml
+/coverage/coverage-final.json
+/coverage/lcov-report/index.html
+/coverage/lcov.info
