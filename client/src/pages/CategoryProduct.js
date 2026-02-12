@@ -94,7 +94,7 @@ const CategoryProduct = () => {
                     setPage(page + 1);
                   }}
                 >
-                  {loading ? "Loading ..." : "Loadmore"}
+                  {loading ? "Loading ..." : "Load more"}
                 </button>
               )}
             </div>
