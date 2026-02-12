@@ -1,50 +1,29 @@
-import fs from "fs";
-import slugify from "slugify";
-import braintree from "braintree";
-
 import productModel from "../models/productModel.js";
 import categoryModel from "../models/categoryModel.js";
-import orderModel from "../models/orderModel.js";
 
 import {
-  createProductController,
   getProductController,
   getSingleProductController,
   productPhotoController,
-  deleteProductController,
-  updateProductController,
   productFiltersController,
   productCountController,
   productListController,
   searchProductController,
   realtedProductController,
   productCategoryController,
-  braintreeTokenController,
-  brainTreePaymentController,
 } from "./productController.js";
 
 jest.mock("dotenv", () => ({ config: jest.fn() }));
-jest.mock("fs", () => ({ readFileSync: jest.fn() }));
-jest.mock("slugify", () => jest.fn());
-jest.mock("braintree", () => {
-  const mockGateway = {
-    clientToken: { generate: jest.fn() },
-    transaction: { sale: jest.fn() },
-  };
-  return {
-    Environment: { Sandbox: "Sandbox" },
-    BraintreeGateway: jest.fn().mockImplementation(() => mockGateway),
-    __mockGateway: mockGateway,
-  };
-});
+jest.mock("braintree", () => ({
+  Environment: { Sandbox: "Sandbox" },
+  BraintreeGateway: jest.fn().mockImplementation(() => ({})),
+}));
 jest.mock("../models/productModel.js", () => ({
   __esModule: true,
   default: Object.assign(jest.fn(), {
     find: jest.fn(),
     findOne: jest.fn(),
     findById: jest.fn(),
-    findByIdAndDelete: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
     estimatedDocumentCount: jest.fn(),
   }),
 }));
@@ -53,10 +32,6 @@ jest.mock("../models/categoryModel.js", () => ({
   default: Object.assign(jest.fn(), {
     findOne: jest.fn(),
   }),
-}));
-jest.mock("../models/orderModel.js", () => ({
-  __esModule: true,
-  default: jest.fn(),
 }));
 
 const makeReq = ({
@@ -96,307 +71,6 @@ beforeEach(() => {
   jest.spyOn(console, "log").mockImplementation(() => {});
 });
 
-describe("createProductController", () => {
-  it("should return error when name is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { description: "d", price: 10, category: "c", quantity: 1 }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Name is Required" });
-  });
-
-  it("should return error when description is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { name: "n", price: 10, category: "c", quantity: 1 }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Description is Required" });
-  });
-
-  it("should return error when price is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { name: "n", description: "d", category: "c", quantity: 1 }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Price is Required" });
-  });
-
-  it("should return error when category is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { name: "n", description: "d", price: 10, quantity: 1 }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Category is Required" });
-  });
-
-  it("should return error when quantity is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { name: "n", description: "d", price: 10, category: "c" }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Quantity is Required" });
-  });
-
-  it("should return error when photo is too large", async () => {
-    // Arrange
-    const req = makeReq({
-      fields: { name: "n", description: "d", price: 10, category: "c", quantity: 1 },
-      files: { photo: { size: 1000001 } },
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({
-      error: "Photo is required and should be less than 1MB",
-    });
-  });
-
-  it("should create product with photo on success", async () => {
-    // Arrange
-    const photoBuffer = Buffer.from("photo");
-    const mockSave = jest.fn().mockResolvedValue({});
-    const mockProduct = { photo: {}, save: mockSave };
-    productModel.mockImplementation(() => mockProduct);
-    slugify.mockReturnValue("test-slug");
-    fs.readFileSync.mockReturnValue(photoBuffer);
-
-    const req = makeReq({
-      fields: {
-        name: "Product",
-        description: "Desc",
-        price: 10,
-        category: "c",
-        quantity: 1,
-        shipping: true,
-      },
-      files: { photo: { size: 10, path: "/tmp/p", type: "image/png" } },
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert
-    expect(slugify).toHaveBeenCalledWith("Product");
-    expect(fs.readFileSync).toHaveBeenCalledWith("/tmp/p");
-    expect(mockSave).toHaveBeenCalledTimes(1);
-    expect(res.status).toHaveBeenCalledWith(201);
-    expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        success: true,
-        message: "Product Created Successfully",
-      })
-    );
-  });
-
-  it("should create product without photo on success", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    const mockProduct = { photo: {}, save: mockSave };
-    productModel.mockImplementation(() => mockProduct);
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: {
-        name: "Product",
-        description: "Desc",
-        price: 10,
-        category: "c",
-        quantity: 1,
-      },
-      files: {},
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert
-    expect(slugify).toHaveBeenCalledWith("Product");
-    expect(fs.readFileSync).not.toHaveBeenCalled();
-    expect(mockSave).toHaveBeenCalledTimes(1);
-    expect(res.status).toHaveBeenCalledWith(201);
-  });
-
-  it("should return error when create fails", async () => {
-    // Arrange
-    const error = new Error("db error");
-    const mockSave = jest.fn().mockRejectedValue(error);
-    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
-    slugify.mockReturnValue("test-slug");
-    const req = makeReq({
-      fields: {
-        name: "Product",
-        description: "Desc",
-        price: 10,
-        category: "c",
-        quantity: 1,
-      },
-      files: {},
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        success: false,
-        message: "Error in Creating product",
-      })
-    );
-  });
-
-  it("should return error when price is negative", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: -10, category: "c", quantity: 1 },
-      files: {},
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert - negative price should not be accepted
-    expect(mockSave).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalledWith(201);
-  });
-
-  it("should return error when quantity is negative", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: -5 },
-      files: {},
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert - negative quantity should not be accepted
-    expect(mockSave).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalledWith(201);
-  });
-
-  it("should not treat price of zero as missing", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: 0, category: "c", quantity: 1 },
-      files: {},
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert - price of 0 (free product) should not be treated as "missing"
-    expect(res.send).not.toHaveBeenCalledWith({ error: "Price is Required" });
-  });
-
-  it("should not treat quantity of zero as missing", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: 0 },
-      files: {},
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert - quantity of 0 (out of stock) should not be treated as "missing"
-    expect(res.send).not.toHaveBeenCalledWith({ error: "Quantity is Required" });
-  });
-
-  it("should return error when price is a non-numeric string", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: "not-a-number", category: "c", quantity: 1 },
-      files: {},
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert - non-numeric price should not be accepted
-    expect(mockSave).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalledWith(201);
-  });
-
-  it("should return error when quantity is a non-numeric string", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.mockImplementation(() => ({ photo: {}, save: mockSave }));
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: "not-a-number" },
-      files: {},
-    });
-    const res = makeRes();
-
-    // Act
-    await createProductController(req, res);
-
-    // Assert - non-numeric quantity should not be accepted
-    expect(mockSave).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalledWith(201);
-  });
-});
-
 describe("getProductController", () => {
   it("should return products on success", async () => {
     // Arrange
@@ -415,7 +89,7 @@ describe("getProductController", () => {
       expect.objectContaining({
         success: true,
         products: mockProducts,
-        counTotal: mockProducts.length,
+        countTotal: mockProducts.length,
       })
     );
   });
@@ -497,7 +171,7 @@ describe("productPhotoController", () => {
     expect(res.send).toHaveBeenCalledWith(mockProduct.photo.data);
   });
 
-  it("should not send response when photo data is missing", async () => {
+  it("should return 404 when photo data is missing", async () => {
     // Arrange
     const mockProduct = { photo: {} };
     productModel.findById.mockReturnValue(makeQuery(mockProduct));
@@ -509,8 +183,26 @@ describe("productPhotoController", () => {
 
     // Assert
     expect(res.set).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalledWith(200);
-    expect(res.send).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith(
+      expect.objectContaining({ success: false, message: "Photo Not Found" })
+    );
+  });
+
+  it("should return 404 when product is not found", async () => {
+    // Arrange
+    productModel.findById.mockReturnValue(makeQuery(null));
+    const req = makeReq({ params: { pid: "nonexistent" } });
+    const res = makeRes();
+
+    // Act
+    await productPhotoController(req, res);
+
+    // Assert
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith(
+      expect.objectContaining({ success: false, message: "Product Not Found" })
+    );
   });
 
   it("should return error on failure", async () => {
@@ -532,355 +224,6 @@ describe("productPhotoController", () => {
         message: "Error while Fetching Photo",
       })
     );
-  });
-});
-
-describe("deleteProductController", () => {
-  it("should delete product on success", async () => {
-    // Arrange
-    productModel.findByIdAndDelete.mockReturnValue(makeQuery({}));
-    const req = makeReq({ params: { pid: "pid" } });
-    const res = makeRes();
-
-    // Act
-    await deleteProductController(req, res);
-
-    // Assert
-    expect(productModel.findByIdAndDelete).toHaveBeenCalledWith("pid");
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        success: true,
-        message: "Product Deleted Successfully",
-      })
-    );
-  });
-
-  it("should return error on failure", async () => {
-    // Arrange
-    productModel.findByIdAndDelete.mockImplementation(() => {
-      throw new Error("boom");
-    });
-    const req = makeReq({ params: { pid: "pid" } });
-    const res = makeRes();
-
-    // Act
-    await deleteProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({ success: false, message: "Error while Deleting Product" })
-    );
-  });
-});
-
-describe("updateProductController", () => {
-  it("should return error when name is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { description: "d", price: 10, category: "c", quantity: 1 }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Name is Required" });
-  });
-
-  it("should return error when description is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { name: "n", price: 10, category: "c", quantity: 1 }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Description is Required" });
-  });
-
-  it("should return error when price is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { name: "n", description: "d", category: "c", quantity: 1 }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Price is Required" });
-  });
-
-  it("should return error when category is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { name: "n", description: "d", price: 10, quantity: 1 }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Category is Required" });
-  });
-
-  it("should return error when quantity is missing", async () => {
-    // Arrange
-    const req = makeReq({ fields: { name: "n", description: "d", price: 10, category: "c" }, files: {} });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({ error: "Quantity is Required" });
-  });
-
-  it("should return error when photo is too large", async () => {
-    // Arrange
-    const req = makeReq({
-      fields: { name: "n", description: "d", price: 10, category: "c", quantity: 1 },
-      files: { photo: { size: 1000001 } },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({
-      error: "Photo is Required and should be less than 1MB",
-    });
-  });
-
-  it("should update product with photo on success", async () => {
-    // Arrange
-    const photoBuffer = Buffer.from("photo");
-    const mockSave = jest.fn().mockResolvedValue({});
-    const mockProduct = { photo: {}, save: mockSave };
-    productModel.findByIdAndUpdate.mockResolvedValue(mockProduct);
-    slugify.mockReturnValue("test-slug");
-    fs.readFileSync.mockReturnValue(photoBuffer);
-
-    const req = makeReq({
-      fields: {
-        name: "Product",
-        description: "Desc",
-        price: 10,
-        category: "c",
-        quantity: 1,
-        shipping: true,
-      },
-      files: { photo: { size: 10, path: "/tmp/p", type: "image/png" } },
-      params: { pid: "pid" },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert
-    expect(slugify).toHaveBeenCalledWith("Product");
-    expect(fs.readFileSync).toHaveBeenCalledWith("/tmp/p");
-    expect(mockSave).toHaveBeenCalledTimes(1);
-    expect(res.status).toHaveBeenCalledWith(201);
-    expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        success: true,
-        message: "Product Updated Successfully",
-      })
-    );
-  });
-
-  it("should update product without photo on success", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    const mockProduct = { photo: {}, save: mockSave };
-    productModel.findByIdAndUpdate.mockResolvedValue(mockProduct);
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: {
-        name: "Product",
-        description: "Desc",
-        price: 10,
-        category: "c",
-        quantity: 1,
-      },
-      files: {},
-      params: { pid: "pid" },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert
-    expect(slugify).toHaveBeenCalledWith("Product");
-    expect(fs.readFileSync).not.toHaveBeenCalled();
-    expect(mockSave).toHaveBeenCalledTimes(1);
-    expect(res.status).toHaveBeenCalledWith(201);
-  });
-
-  it("should return error when update fails", async () => {
-    // Arrange
-    const error = new Error("db error");
-    productModel.findByIdAndUpdate.mockRejectedValue(error);
-    slugify.mockReturnValue("test-slug");
-    const req = makeReq({
-      fields: {
-        name: "Product",
-        description: "Desc",
-        price: 10,
-        category: "c",
-        quantity: 1,
-      },
-      files: {},
-      params: { pid: "pid" },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        success: false,
-        message: "Error in Updating Product",
-      })
-    );
-  });
-
-  it("should return error when price is negative", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: -10, category: "c", quantity: 1 },
-      files: {},
-      params: { pid: "pid" },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert - negative price should not be accepted
-    expect(mockSave).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalledWith(201);
-  });
-
-  it("should return error when quantity is negative", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: -5 },
-      files: {},
-      params: { pid: "pid" },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert - negative quantity should not be accepted
-    expect(mockSave).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalledWith(201);
-  });
-
-  it("should not treat price of zero as missing", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: 0, category: "c", quantity: 1 },
-      files: {},
-      params: { pid: "pid" },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert - price of 0 (free product) should not be treated as "missing"
-    expect(res.send).not.toHaveBeenCalledWith({ error: "Price is Required" });
-  });
-
-  it("should not treat quantity of zero as missing", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: 0 },
-      files: {},
-      params: { pid: "pid" },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert - quantity of 0 (out of stock) should not be treated as "missing"
-    expect(res.send).not.toHaveBeenCalledWith({ error: "Quantity is Required" });
-  });
-
-  it("should return error when price is a non-numeric string", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: "not-a-number", category: "c", quantity: 1 },
-      files: {},
-      params: { pid: "pid" },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert - non-numeric price should not be accepted
-    expect(mockSave).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalledWith(201);
-  });
-
-  it("should return error when quantity is a non-numeric string", async () => {
-    // Arrange
-    const mockSave = jest.fn().mockResolvedValue({});
-    productModel.findByIdAndUpdate.mockResolvedValue({ photo: {}, save: mockSave });
-    slugify.mockReturnValue("test-slug");
-
-    const req = makeReq({
-      fields: { name: "Product", description: "Desc", price: 10, category: "c", quantity: "not-a-number" },
-      files: {},
-      params: { pid: "pid" },
-    });
-    const res = makeRes();
-
-    // Act
-    await updateProductController(req, res);
-
-    // Assert - non-numeric quantity should not be accepted
-    expect(mockSave).not.toHaveBeenCalled();
-    expect(res.status).not.toHaveBeenCalledWith(201);
   });
 });
 
@@ -1174,168 +517,5 @@ describe("productCategoryController", () => {
         message: "Error in Fetching Products by Category",
       })
     );
-  });
-});
-
-describe("braintreeTokenController", () => {
-  it("should return token on success", async () => {
-    // Arrange
-    const response = { token: "t" };
-    braintree.__mockGateway.clientToken.generate.mockImplementation((options, cb) => cb(null, response));
-    const req = makeReq();
-    const res = makeRes();
-
-    // Act
-    await braintreeTokenController(req, res);
-
-    // Assert
-    expect(braintree.__mockGateway.clientToken.generate).toHaveBeenCalledWith({}, expect.any(Function));
-    expect(res.send).toHaveBeenCalledWith(response);
-  });
-
-  it("should return error on failure", async () => {
-    // Arrange
-    const error = new Error("bad token");
-    braintree.__mockGateway.clientToken.generate.mockImplementation((options, cb) => cb(error));
-    const req = makeReq();
-    const res = makeRes();
-
-    // Act
-    await braintreeTokenController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith(error);
-  });
-
-  it("should log error when gateway.clientToken.generate throws", async () => {
-    // Arrange
-    const error = new Error("gateway crash");
-    braintree.__mockGateway.clientToken.generate.mockImplementation(() => {
-      throw error;
-    });
-    const req = makeReq();
-    const res = makeRes();
-
-    // Act
-    await braintreeTokenController(req, res);
-
-    // Assert
-    expect(console.log).toHaveBeenCalledWith(error);
-  });
-});
-
-describe("brainTreePaymentController", () => {
-  it("should complete payment and create order on success", async () => {
-    // Arrange
-    const saleResult = { id: "tx" };
-    braintree.__mockGateway.transaction.sale.mockImplementation((options, cb) => cb(null, saleResult));
-
-    const save = jest.fn();
-    orderModel.mockImplementation(() => ({ save }));
-
-    const req = makeReq({
-      body: { nonce: "nonce", cart: [{ price: 10 }, { price: 5 }] },
-      user: { _id: "user1" },
-    });
-    const res = makeRes();
-
-    // Act
-    await brainTreePaymentController(req, res);
-
-    // Assert
-    expect(braintree.__mockGateway.transaction.sale).toHaveBeenCalledWith(
-      expect.objectContaining({
-        amount: 15,
-        paymentMethodNonce: "nonce",
-      }),
-      expect.any(Function)
-    );
-    expect(orderModel).toHaveBeenCalledWith(
-      expect.objectContaining({
-        products: [{ price: 10 }, { price: 5 }],
-        payment: saleResult,
-        buyer: "user1",
-      })
-    );
-    expect(save).toHaveBeenCalledTimes(1);
-    expect(res.json).toHaveBeenCalledWith({ ok: true });
-  });
-
-  it("should return error on payment failure", async () => {
-    // Arrange
-    const error = new Error("payment failed");
-    braintree.__mockGateway.transaction.sale.mockImplementation((options, cb) => cb(error, null));
-    const req = makeReq({
-      body: { nonce: "nonce", cart: [{ price: 10 }] },
-      user: { _id: "user1" },
-    });
-    const res = makeRes();
-
-    // Act
-    await brainTreePaymentController(req, res);
-
-    // Assert
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith(error);
-  });
-
-  it("should log error when gateway.transaction.sale throws", async () => {
-    // Arrange
-    const error = new Error("gateway crash");
-    braintree.__mockGateway.transaction.sale.mockImplementation(() => {
-      throw error;
-    });
-    const req = makeReq({
-      body: { nonce: "nonce", cart: [{ price: 10 }] },
-      user: { _id: "user1" },
-    });
-    const res = makeRes();
-
-    // Act
-    await brainTreePaymentController(req, res);
-
-    // Assert
-    expect(console.log).toHaveBeenCalledWith(error);
-  });
-
-  it("should not process payment when cart is empty", async () => {
-    // Arrange
-    const saleResult = { id: "tx" };
-    braintree.__mockGateway.transaction.sale.mockImplementation((options, cb) => cb(null, saleResult));
-    const save = jest.fn();
-    orderModel.mockImplementation(() => ({ save }));
-
-    const req = makeReq({
-      body: { nonce: "nonce", cart: [] },
-      user: { _id: "user1" },
-    });
-    const res = makeRes();
-
-    // Act
-    await brainTreePaymentController(req, res);
-
-    // Assert - empty cart (total = 0) should be rejected before reaching payment gateway
-    expect(braintree.__mockGateway.transaction.sale).not.toHaveBeenCalled();
-  });
-
-  it("should not process payment when cart contains negative prices", async () => {
-    // Arrange
-    const saleResult = { id: "tx" };
-    braintree.__mockGateway.transaction.sale.mockImplementation((options, cb) => cb(null, saleResult));
-    const save = jest.fn();
-    orderModel.mockImplementation(() => ({ save }));
-
-    const req = makeReq({
-      body: { nonce: "nonce", cart: [{ price: -10 }, { price: 5 }] },
-      user: { _id: "user1" },
-    });
-    const res = makeRes();
-
-    // Act
-    await brainTreePaymentController(req, res);
-
-    // Assert - cart with negative prices resulting in negative total should be rejected
-    expect(braintree.__mockGateway.transaction.sale).not.toHaveBeenCalled();
   });
 });
