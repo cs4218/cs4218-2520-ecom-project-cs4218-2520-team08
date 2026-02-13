@@ -2,9 +2,9 @@ name: Jest Unit Tests
 
 on: 
   push:
-    branches: [ "**" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "**" ]
+    branches: [ "main" ]
 jobs:
   test:
     runs-on: ubuntu-latest
