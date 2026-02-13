@@ -322,13 +322,13 @@ export const forgotPasswordController = async (req, res) => {
   try {
     const { email, answer, newPassword } = req.body;
     if (!email) {
-      return res.status(404).send({ message: "Email is required" });
+      return res.status(400).send({ message: "Emai is required" });
     }
     if (!answer) {
-      return res.status(404).send({ message: "Answer is required" });
+      return res.status(400).send({ message: "answer is required" });
     }
     if (!newPassword) {
-      return res.status(404).send({ message: "New Password is required" });
+      return res.status(400).send({ message: "New Password is required" });
     }
 
     const emailLower = email.trim().toLowerCase();
@@ -371,7 +371,14 @@ export const forgotPasswordController = async (req, res) => {
 
     //check
     const answerNormalized = answer.trim().toLowerCase();
-    const user = await userModel.findOne({ email: emailLower });
+    const user = await userModel.findOne({
+      email: {
+        $regex: new RegExp(
+          `^${emailLower.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+          "i",
+        ),
+      },
+    });
     if (!user) {
       return res.status(404).send({
         success: false,

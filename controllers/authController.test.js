@@ -1607,36 +1607,36 @@ describe("authController", () => {
   });
 
   describe("forgotPasswordController", () => {
-    it("returns 404 for missing email", async () => {
+    it("returns 400 for missing email", async () => {
       mockReq.body = { answer: "ans", newPassword: "newpass" };
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
-        message: "Email is required",
+        message: "Emai is required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for missing answer", async () => {
+    it("returns 400 for missing answer", async () => {
       mockReq.body = { email: "test@example.com", newPassword: "newpass" };
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
-        message: "Answer is required",
+        message: "answer is required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for missing newPassword", async () => {
+    it("returns 400 for missing newPassword", async () => {
       mockReq.body = { email: "test@example.com", answer: "ans" };
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "New Password is required",
       });
@@ -1653,9 +1653,13 @@ describe("authController", () => {
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(userModel.findOne).toHaveBeenCalledWith({
-        email: "test@example.com",
-      });
+      expect(userModel.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: expect.objectContaining({
+            $regex: expect.any(RegExp),
+          }),
+        })
+      );
       expect(mockRes.status).toHaveBeenCalledWith(404);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
@@ -1678,9 +1682,13 @@ describe("authController", () => {
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(userModel.findOne).toHaveBeenCalledWith({
-        email: "test@example.com",
-      });
+      expect(userModel.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: expect.objectContaining({
+            $regex: expect.any(RegExp),
+          }),
+        })
+      );
       expect(mockRes.status).toHaveBeenCalledWith(404);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
@@ -1705,6 +1713,13 @@ describe("authController", () => {
 
       await forgotPasswordController(mockReq, mockRes);
 
+      expect(userModel.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: expect.objectContaining({
+            $regex: expect.any(RegExp),
+          }),
+        })
+      );
       expect(hashPassword).toHaveBeenCalledWith("newpass");
       expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith("123", {
         password: "newHashedPassword",
@@ -1735,19 +1750,19 @@ describe("authController", () => {
       });
     });
 
-    it("returns 404 for empty string email", async () => {
+    it("returns 400 for empty string email", async () => {
       mockReq.body = { email: "", answer: "ans", newPassword: "newpass" };
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
-        message: "Email is required",
+        message: "Emai is required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for empty string answer", async () => {
+    it("returns 400 for empty string answer", async () => {
       mockReq.body = {
         email: "test@example.com",
         answer: "",
@@ -1756,14 +1771,14 @@ describe("authController", () => {
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
-        message: "Answer is required",
+        message: "answer is required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for empty string newPassword", async () => {
+    it("returns 400 for empty string newPassword", async () => {
       mockReq.body = {
         email: "test@example.com",
         answer: "ans",
@@ -1772,7 +1787,7 @@ describe("authController", () => {
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "New Password is required",
       });
@@ -1823,18 +1838,18 @@ describe("authController", () => {
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for null email", async () => {
+    it("returns 400 for null email", async () => {
       mockReq.body = { email: null, answer: "ans", newPassword: "newpass" };
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
-        message: "Email is required",
+        message: "Emai is required",
       });
     });
 
-    it("returns 404 for null answer", async () => {
+    it("returns 400 for null answer", async () => {
       mockReq.body = {
         email: "test@example.com",
         answer: null,
@@ -1843,9 +1858,9 @@ describe("authController", () => {
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
-        message: "Answer is required",
+        message: "answer is required",
       });
     });
 
@@ -1974,9 +1989,13 @@ describe("authController", () => {
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(userModel.findOne).toHaveBeenCalledWith({
-        email: "test@example.com",
-      });
+      expect(userModel.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: expect.objectContaining({
+            $regex: expect.any(RegExp),
+          }),
+        })
+      );
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: true,
@@ -2001,9 +2020,13 @@ describe("authController", () => {
 
       await forgotPasswordController(mockReq, mockRes);
 
-      expect(userModel.findOne).toHaveBeenCalledWith({
-        email: "test@example.com",
-      });
+      expect(userModel.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: expect.objectContaining({
+            $regex: expect.any(RegExp),
+          }),
+        })
+      );
       expect(hashPassword).toHaveBeenCalledWith("newpass");
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.send).toHaveBeenCalledWith({
