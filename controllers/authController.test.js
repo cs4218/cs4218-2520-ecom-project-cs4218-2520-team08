@@ -35,7 +35,7 @@ describe("authController", () => {
   });
 
   describe("registerController", () => {
-    it("returns 404 for missing name", async () => {
+    it("returns 400 for missing name", async () => {
       mockReq.body = {
         email: "test@example.com",
         password: "pass",
@@ -47,12 +47,12 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({ error: "Name is Required" });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for missing email", async () => {
+    it("returns 400 for missing email", async () => {
       mockReq.body = {
         name: "Test",
         password: "pass",
@@ -64,14 +64,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Email is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for missing password", async () => {
+    it("returns 400 for missing password", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -83,14 +83,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Password is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for missing phone", async () => {
+    it("returns 400 for missing phone", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -102,14 +102,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Phone no is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for missing address", async () => {
+    it("returns 400 for missing address", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -121,14 +121,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Address is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for missing DOB", async () => {
+    it("returns 400 for missing DOB", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -140,14 +140,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "DOB is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for missing answer", async () => {
+    it("returns 400 for missing answer", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -159,7 +159,7 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Answer is Required",
       });
@@ -246,7 +246,7 @@ describe("authController", () => {
       });
     });
 
-    it("returns 404 for empty string name", async () => {
+    it("returns 400 for empty string name", async () => {
       mockReq.body = {
         name: "",
         email: "test@example.com",
@@ -259,12 +259,12 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({ error: "Name is Required" });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for empty string email", async () => {
+    it("returns 400 for empty string email", async () => {
       mockReq.body = {
         name: "Test",
         email: "",
@@ -277,14 +277,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Email is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for empty string password", async () => {
+    it("returns 400 for empty string password", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -297,14 +297,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Password is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for empty string phone", async () => {
+    it("returns 400 for empty string phone", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -317,14 +317,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Phone no is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for empty string address", async () => {
+    it("returns 400 for empty string address", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -337,14 +337,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Address is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for empty string DOB", async () => {
+    it("returns 400 for empty string DOB", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -357,14 +357,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "DOB is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for empty string answer", async () => {
+    it("returns 400 for empty string answer", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -377,7 +377,7 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Answer is Required",
       });
@@ -524,7 +524,7 @@ describe("authController", () => {
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for null name", async () => {
+    it("returns 400 for null name", async () => {
       mockReq.body = {
         name: null,
         email: "test@example.com",
@@ -537,12 +537,12 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({ error: "Name is Required" });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for null email", async () => {
+    it("returns 400 for null email", async () => {
       mockReq.body = {
         name: "Test",
         email: null,
@@ -555,14 +555,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Email is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for null password", async () => {
+    it("returns 400 for null password", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -575,14 +575,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Password is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for null phone", async () => {
+    it("returns 400 for null phone", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -595,14 +595,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Phone no is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for null address", async () => {
+    it("returns 400 for null address", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -615,14 +615,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Address is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for null DOB", async () => {
+    it("returns 400 for null DOB", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -635,14 +635,14 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "DOB is Required",
       });
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for null answer", async () => {
+    it("returns 400 for null answer", async () => {
       mockReq.body = {
         name: "Test",
         email: "test@example.com",
@@ -655,7 +655,7 @@ describe("authController", () => {
 
       await registerController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         message: "Answer is Required",
       });
@@ -1289,12 +1289,12 @@ describe("authController", () => {
   });
 
   describe("loginController", () => {
-    it("returns 404 for missing email", async () => {
+    it("returns 400 for missing email", async () => {
       mockReq.body = { password: "pass" };
 
       await loginController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Invalid email or password",
@@ -1302,12 +1302,12 @@ describe("authController", () => {
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for missing password", async () => {
+    it("returns 400 for missing password", async () => {
       mockReq.body = { email: "test@example.com" };
 
       await loginController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Invalid email or password",
@@ -1315,16 +1315,20 @@ describe("authController", () => {
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for non-existent email", async () => {
+    it("returns 400 for non-existent email", async () => {
       mockReq.body = { email: "test@example.com", password: "pass" };
       userModel.findOne.mockResolvedValueOnce(null);
 
       await loginController(mockReq, mockRes);
 
-      expect(userModel.findOne).toHaveBeenCalledWith({
-        email: "test@example.com",
-      });
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(userModel.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: expect.objectContaining({
+            $regex: expect.any(RegExp),
+          }),
+        }),
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Email is not registerd",
@@ -1409,12 +1413,12 @@ describe("authController", () => {
       });
     });
 
-    it("returns 404 for empty string email", async () => {
+    it("returns 400 for empty string email", async () => {
       mockReq.body = { email: "", password: "pass" };
 
       await loginController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Invalid email or password",
@@ -1422,12 +1426,12 @@ describe("authController", () => {
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for empty string password", async () => {
+    it("returns 400 for empty string password", async () => {
       mockReq.body = { email: "test@example.com", password: "" };
 
       await loginController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Invalid email or password",
@@ -1461,24 +1465,24 @@ describe("authController", () => {
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 for null email", async () => {
+    it("returns 400 for null email", async () => {
       mockReq.body = { email: null, password: "pass" };
 
       await loginController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Invalid email or password",
       });
     });
 
-    it("returns 404 for null password", async () => {
+    it("returns 400 for null password", async () => {
       mockReq.body = { email: "test@example.com", password: null };
 
       await loginController(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Invalid email or password",
@@ -1518,10 +1522,14 @@ describe("authController", () => {
 
       await loginController(mockReq, mockRes);
 
-      expect(userModel.findOne).toHaveBeenCalledWith({
-        email: "test@example.com",
-      });
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(userModel.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: expect.objectContaining({
+            $regex: expect.any(RegExp),
+          }),
+        }),
+      );
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Email is not registerd",
@@ -1643,7 +1651,7 @@ describe("authController", () => {
       expect(userModel.findOne).not.toHaveBeenCalled();
     });
 
-    it("returns 404 when email is not found", async () => {
+    it("returns 400 when email is not found", async () => {
       mockReq.body = {
         email: "test@example.com",
         answer: "ans",
@@ -1658,16 +1666,16 @@ describe("authController", () => {
           email: expect.objectContaining({
             $regex: expect.any(RegExp),
           }),
-        })
+        }),
       );
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Wrong Email Or Answer",
       });
     });
 
-    it("returns 404 when answer does not match", async () => {
+    it("returns 400 when answer does not match", async () => {
       mockReq.body = {
         email: "test@example.com",
         answer: "wrongans",
@@ -1687,9 +1695,9 @@ describe("authController", () => {
           email: expect.objectContaining({
             $regex: expect.any(RegExp),
           }),
-        })
+        }),
       );
-      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.send).toHaveBeenCalledWith({
         success: false,
         message: "Wrong Email Or Answer",
@@ -1718,7 +1726,7 @@ describe("authController", () => {
           email: expect.objectContaining({
             $regex: expect.any(RegExp),
           }),
-        })
+        }),
       );
       expect(hashPassword).toHaveBeenCalledWith("newpass");
       expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith("123", {
@@ -1994,7 +2002,7 @@ describe("authController", () => {
           email: expect.objectContaining({
             $regex: expect.any(RegExp),
           }),
-        })
+        }),
       );
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.send).toHaveBeenCalledWith({
@@ -2025,7 +2033,7 @@ describe("authController", () => {
           email: expect.objectContaining({
             $regex: expect.any(RegExp),
           }),
-        })
+        }),
       );
       expect(hashPassword).toHaveBeenCalledWith("newpass");
       expect(mockRes.status).toHaveBeenCalledWith(200);

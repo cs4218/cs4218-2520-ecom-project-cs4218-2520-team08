@@ -98,25 +98,25 @@ export const registerController = async (req, res) => {
     const { name, email, password, phone, address, DOB, answer } = req.body;
     //validations
     if (!name) {
-      return res.status(404).send({ error: "Name is Required" });
+      return res.status(400).send({ error: "Name is Required" });
     }
     if (!email) {
-      return res.status(404).send({ message: "Email is Required" });
+      return res.status(400).send({ message: "Email is Required" });
     }
     if (!password) {
-      return res.status(404).send({ message: "Password is Required" });
+      return res.status(400).send({ message: "Password is Required" });
     }
     if (!phone) {
-      return res.status(404).send({ message: "Phone no is Required" });
+      return res.status(400).send({ message: "Phone no is Required" });
     }
     if (!address) {
-      return res.status(404).send({ message: "Address is Required" });
+      return res.status(400).send({ message: "Address is Required" });
     }
     if (!DOB) {
-      return res.status(404).send({ message: "DOB is Required" });
+      return res.status(400).send({ message: "DOB is Required" });
     }
     if (!answer) {
-      return res.status(404).send({ message: "Answer is Required" });
+      return res.status(400).send({ message: "Answer is Required" });
     }
 
     const emailLower = email.trim().toLowerCase();
@@ -252,7 +252,7 @@ export const loginController = async (req, res) => {
     const { email, password } = req.body;
     //validation
     if (!email || !password) {
-      return res.status(404).send({
+      return res.status(400).send({
         success: false,
         message: "Invalid email or password",
       });
@@ -275,9 +275,16 @@ export const loginController = async (req, res) => {
     }
 
     //check user
-    const user = await userModel.findOne({ email: emailLower });
+    const user = await userModel.findOne({
+      email: {
+        $regex: new RegExp(
+          `^${emailLower.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+          "i",
+        ),
+      },
+    });
     if (!user) {
-      return res.status(404).send({
+      return res.status(400).send({
         success: false,
         message: "Email is not registerd",
       });
@@ -380,7 +387,7 @@ export const forgotPasswordController = async (req, res) => {
       },
     });
     if (!user) {
-      return res.status(404).send({
+      return res.status(400).send({
         success: false,
         message: "Wrong Email Or Answer",
       });
@@ -388,7 +395,7 @@ export const forgotPasswordController = async (req, res) => {
     const storedAnswerNormalized =
       (user.answer && String(user.answer).trim().toLowerCase()) || "";
     if (storedAnswerNormalized !== answerNormalized) {
-      return res.status(404).send({
+      return res.status(400).send({
         success: false,
         message: "Wrong Email Or Answer",
       });
