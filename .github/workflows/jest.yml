@@ -10,13 +10,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with: 
-          node-version: '20'
+          node-version: '18.x'
           cache: 'npm'
-      - name: Install dependencies
+
+      - name: Install Root Dependencies
         run: npm install
-      - name: Run Tests
-        run: npm test
+
+      - name: Run Client Dependencies
+        run: cd client && npm install && cd
+
+      - name: Run backend tests
+        run: npm run test:backend -- --coverageThreshold '{}'
+
+      - name: Run frontend tests
+        run: npm run test:frontend -- --coverageThreshold '{}'
       
+    
