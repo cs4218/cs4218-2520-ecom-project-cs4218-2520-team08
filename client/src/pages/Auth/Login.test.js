@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import Login from './Login';
 
 // Mocking axios.post
+jest.mock("../../hooks/useCategory", () => jest.fn(() => []));
 jest.mock('axios');
 jest.mock('react-hot-toast');
 

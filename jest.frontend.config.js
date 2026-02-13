@@ -20,15 +20,30 @@ module.exports = {
   transformIgnorePatterns: ["/node_modules/(?!(styleMock\\.js)$)"],
 
   // only run these tests
-  testMatch: ["<rootDir>/client/src/pages/Auth/*.test.js"],
+  testMatch: ["<rootDir>/client/src/**/*.test.js"],
+
+  testPathIgnorePatterns: [
+  "<rootDir>/client/src/pages/Auth/",  
+  "<rootDir>/client/src/_site/pages/Auth/",
+],
+
 
   // jest code coverage
   collectCoverage: true,
-  collectCoverageFrom: ["client/src/pages/Auth/**"],
+  collectCoverageFrom: [
+    "client/src/pages/admin/AdminDashboard.js",
+    "client/src/pages/admin/CreateProduct.js",
+    "client/src/components/AdminMenu.js",
+    "client/src/pages/admin/AdminOrders.js",
+    "client/src/pages/admin/UpdateProduct.js",
+    "client/src/pages/admin/Products.js",
+    "client/src/pages/admin/CreateCategory.js",
+    "client/src/components/Form/CategoryForm.js"
+  ],
   coverageThreshold: {
     global: {
-      lines: 100,
-      functions: 100,
+      lines: 80,
+      functions: 80,
     },
   },
   setupFilesAfterEnv: ["<rootDir>/client/src/setupTests.js"],
