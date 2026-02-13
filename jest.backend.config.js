@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   // display name
   displayName: "backend",
 
@@ -6,7 +6,7 @@ export default {
   testEnvironment: "node",
 
   // which test to run
-  testMatch: ["<rootDir>/controllers/*.test.js", "<rootDir>/models/*.test.js"],
+  testMatch: ["<rootDir>/controllers/**/*.test.js", "<rootDir>/models/**/*.test.js"],
 
   // jest code coverage
   collectCoverage: true,
