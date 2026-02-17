@@ -4,6 +4,14 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "../../styles/AuthStyles.css";
+import {
+  containsXSS,
+  containsSQLInjection,
+  isValidPhone,
+  isValidLength,
+  isNotWhitespaceOnly,
+} from "../../helpers/validationHelper";
+
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -14,9 +22,82 @@ const Register = () => {
   const [answer, setAnswer] = useState("");
   const navigate = useNavigate();
 
+  const validateForm = () => {
+    if (!isNotWhitespaceOnly(name)) {
+      toast.error("Name cannot be whitespace only");
+      return false;
+    }
+
+    if (!isNotWhitespaceOnly(password)) {
+      toast.error("Password cannot be whitespace only");
+      return false;
+    }
+
+    if (!isNotWhitespaceOnly(phone)) {
+      toast.error("Phone number cannot be whitespace only");
+      return false;
+    }
+
+    if (!isNotWhitespaceOnly(address)) {
+      toast.error("Address cannot be whitespace only");
+      return false;
+    }
+
+    if (!isNotWhitespaceOnly(answer)) {
+      toast.error("Answer cannot be whitespace only");
+      return false;
+    }
+
+    const phoneValidation = isValidPhone(phone);
+    if (!phoneValidation.valid) {
+      toast.error(phoneValidation.error);
+      return false;
+    }
+
+    if (!isValidLength(name, 100)) {
+      toast.error("Name is too long (max 100 characters)");
+      return false;
+    }
+
+    if (!isValidLength(address, 500)) {
+      toast.error("Address is too long (max 500 characters)");
+      return false;
+    }
+
+    // Check for XSS attempts
+    if (
+      containsXSS(name) ||
+      containsXSS(password) ||
+      containsXSS(address) ||
+      containsXSS(answer)
+    ) {
+      toast.error("Invalid characters detected");
+      return false;
+    }
+
+    // Check for SQL injection attempts
+    if (
+      containsSQLInjection(name) ||
+      containsSQLInjection(email) ||
+      containsSQLInjection(password) ||
+      containsSQLInjection(address) ||
+      containsSQLInjection(answer)
+    ) {
+      toast.error("Invalid characters detected");
+      return false;
+    }
+
+    return true;
+  };
+
   // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const res = await axios.post("/api/v1/auth/register", {
         name,
@@ -63,7 +144,7 @@ const Register = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="form-control"
               id="exampleInputEmail1"
-              placeholder="Enter Your Email "
+              placeholder="Enter Your Email"
               required
             />
           </div>
@@ -102,13 +183,14 @@ const Register = () => {
           </div>
           <div className="mb-3">
             <input
-              type="Date"
+              type="date"
               value={DOB}
               onChange={(e) => setDOB(e.target.value)}
               className="form-control"
               id="exampleInputDOB1"
               placeholder="Enter Your DOB"
               required
+              max={new Date().toISOString().split("T")[0]}
             />
           </div>
           <div className="mb-3">

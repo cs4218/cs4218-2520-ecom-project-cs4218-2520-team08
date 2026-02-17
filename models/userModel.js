@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema(
       type: {},
       required: true,
     },
+    DOB: {
+      type: String,
+      required: true,
+    },
     answer: {
       type: String,
       required: true,
@@ -33,7 +37,7 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("users", userSchema);
