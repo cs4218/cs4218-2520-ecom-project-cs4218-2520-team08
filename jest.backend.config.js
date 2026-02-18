@@ -11,6 +11,7 @@ module.exports = {
     "<rootDir>/helpers/*.test.js",
     "<rootDir>/middlewares/*.test.js",
     "<rootDir>/models/*.test.js",
+    "<rootDir>/config/*.test.js",
   ],
 
   // jest code coverage
@@ -20,6 +21,11 @@ module.exports = {
     "helpers/authHelper.js",
     "middlewares/authMiddleware.js",
     "models/userModel.js",
+    "controllers/productController.js",
+    "helpers/productHelper.js",
+    "middlewares/productMiddleware.js",
+    "models/productModel.js",
+    "config/db.js",
   ],
   coverageThreshold: {
     global: {
