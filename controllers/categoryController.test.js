@@ -1,217 +1,241 @@
+/**
+ * Unit Tests for categoryController.js
+ *
+ * Tests all 5 controller methods: create, update, getAll, single, delete.
+ * Documents bugs found in the source code.
+ */
+
 import {
   createCategoryController,
   updateCategoryController,
   categoryControlller,
   singleCategoryController,
   deleteCategoryCOntroller,
-} from "./categoryController.js";
+} from './categoryController';
+import categoryModel from '../models/categoryModel.js';
+import slugify from 'slugify';
 
-import categoryModel from "../models/categoryModel.js";
-import slugify from "slugify";
-beforeEach(() => {
-  jest.spyOn(console, "log").mockImplementation(() => {});
-  jest.spyOn(console, "error").mockImplementation(() => {});
-  jest.spyOn(console, "warn").mockImplementation(() => {});
+// ─── Mocks ──────────────────────────────────────────────────────────────────
+
+jest.mock('../models/categoryModel.js');
+jest.mock('slugify');
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const mockReq = (overrides = {}) => ({
+  body: {},
+  params: {},
+  ...overrides,
 });
 
-afterEach(() => {
-  console.log.mockRestore?.();
-  console.error.mockRestore?.();
-  console.warn.mockRestore?.();
-});
-
-jest.mock("slugify", () => ({
-  __esModule: true,
-  default: jest.fn(),
-}));
-
-jest.mock("../models/categoryModel.js", () => {
-  const mockSave = jest.fn();
-
-  const ModelCtor = jest.fn(function (doc) {
-    return { ...doc, save: mockSave };
-  });
-
-  ModelCtor.create = jest.fn();
-  ModelCtor.findOne = jest.fn();
-  ModelCtor.findByIdAndUpdate = jest.fn();
-  ModelCtor.find = jest.fn();
-  ModelCtor.findByIdAndDelete = jest.fn();
-
-  ModelCtor.__mockSave = mockSave;
-
-  return { __esModule: true, default: ModelCtor };
-});
-
-function mockRes() {
+const mockRes = () => {
   const res = {};
   res.status = jest.fn().mockReturnValue(res);
   res.send = jest.fn().mockReturnValue(res);
   return res;
-}
+};
 
-describe("controllers/categoryController.js", () => {
+// ─── Test Suite ─────────────────────────────────────────────────────────────
+
+describe('categoryController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    slugify.mockImplementation((name) => name.toLowerCase().replace(/\s+/g, '-'));
   });
 
-  describe("createCategoryController", () => {
-    test("returns 401 when name missing", async () => {
-      const req = { body: {} };
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 1. createCategoryController
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('createCategoryController', () => {
+    it('returns 401 when name is not provided', async () => {
+      const req = mockReq({ body: {} });
       const res = mockRes();
 
       await createCategoryController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith({ message: "Name is required" });
-      expect(categoryModel.findOne).not.toHaveBeenCalled();
+      expect(res.send).toHaveBeenCalledWith({ message: 'Name is required' });
     });
 
-    test("returns 200 when category already exists", async () => {
-      const req = { body: { name: "Shoes" } };
+    it('returns 401 when name is empty string', async () => {
+      const req = mockReq({ body: { name: '' } });
       const res = mockRes();
-
-      categoryModel.findOne.mockResolvedValueOnce({ _id: "c1", name: "Shoes" });
 
       await createCategoryController(req, res);
 
-      expect(categoryModel.findOne).toHaveBeenCalledWith({ name: "Shoes" });
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.send).toHaveBeenCalledWith({ message: 'Name is required' });
+    });
+
+    /**
+     * FIXED: When a duplicate category exists, the controller now returns
+     * status 409 (Conflict) with success: false.
+     */
+    it('returns 409 with success: false for duplicate category', async () => {
+      categoryModel.findOne.mockResolvedValue({
+        _id: 'existing',
+        name: 'Electronics',
+      });
+
+      const req = mockReq({ body: { name: 'Electronics' } });
+      const res = mockRes();
+
+      await createCategoryController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: 'Category Already Exists',
+      });
+    });
+
+    it('creates category with slugified name and returns 201', async () => {
+      categoryModel.findOne.mockResolvedValue(null);
+
+      const savedCategory = {
+        _id: 'new1',
+        name: 'Electronics',
+        slug: 'electronics',
+      };
+      // controller uses categoryModel.create()
+      categoryModel.create = jest.fn().mockResolvedValue(savedCategory);
+
+      const req = mockReq({ body: { name: 'Electronics' } });
+      const res = mockRes();
+
+      await createCategoryController(req, res);
+
+      expect(slugify).toHaveBeenCalledWith('Electronics');
+      expect(res.status).toHaveBeenCalledWith(201);
       expect(res.send).toHaveBeenCalledWith({
         success: true,
-        message: "Category Already Exisits",
+        message: 'new category created',
+        category: savedCategory,
       });
     });
 
-    test("creates category successfully (supports create() OR new().save())", async () => {
-      const req = { body: { name: "Shoes" } };
+    it('checks for existing category before creating', async () => {
+      categoryModel.findOne.mockResolvedValue(null);
+      categoryModel.mockImplementation(() => ({
+        save: jest.fn().mockResolvedValue({ _id: 'id', name: 'Test', slug: 'test' }),
+      }));
+
+      const req = mockReq({ body: { name: 'Test' } });
       const res = mockRes();
-
-      categoryModel.findOne.mockResolvedValueOnce(null);
-      slugify.mockReturnValueOnce("shoes");
-
-      categoryModel.create.mockResolvedValueOnce({
-        _id: "new1",
-        name: "Shoes",
-        slug: "shoes",
-      });
-
-      categoryModel.__mockSave.mockResolvedValueOnce({
-        _id: "new1",
-        name: "Shoes",
-        slug: "shoes",
-      });
 
       await createCategoryController(req, res);
 
-      expect(slugify).toHaveBeenCalledWith("Shoes");
-
-      const usedCreate = categoryModel.create.mock.calls.length > 0;
-      const usedCtor = categoryModel.mock.calls.length > 0;
-
-      expect(usedCreate || usedCtor).toBe(true);
-
-      if (usedCreate) {
-        expect(categoryModel.create).toHaveBeenCalledWith({
-          name: "Shoes",
-          slug: "shoes",
-        });
-      } else {
-        expect(categoryModel).toHaveBeenCalledWith({
-          name: "Shoes",
-          slug: "shoes",
-        });
-        expect(categoryModel.__mockSave).toHaveBeenCalled();
-      }
-
-      expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          message: "new category created",
-          category: expect.objectContaining({
-            name: "Shoes",
-            slug: "shoes",
-          }),
-        })
-      );
+      expect(categoryModel.findOne).toHaveBeenCalledWith({ name: 'Test' });
     });
 
-    test("returns 500 when DB throws (match actual controller message)", async () => {
-      const req = { body: { name: "Shoes" } };
-      const res = mockRes();
+    /**
+     * FIXED: The catch block now correctly references `error` and
+     * sends a proper 500 response.
+     */
+    it('returns 500 on database error', async () => {
+      const dbError = new Error('DB error');
+      categoryModel.findOne.mockRejectedValue(dbError);
 
-      categoryModel.findOne.mockRejectedValueOnce(new Error("DB down"));
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const req = mockReq({ body: { name: 'Test' } });
+      const res = mockRes();
 
       await createCategoryController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          message: "Error in Category", 
-        })
-      );
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        error: dbError,
+        message: 'Error in Category',
+      });
+
+      consoleSpy.mockRestore();
     });
   });
 
-  describe("updateCategoryController", () => {
-    test("updates category and returns 200", async () => {
-      const req = { body: { name: "NewName" }, params: { id: "c1" } };
-      const res = mockRes();
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 2. updateCategoryController
+  // ═══════════════════════════════════════════════════════════════════════════
 
-      slugify.mockReturnValueOnce("newname");
-      categoryModel.findByIdAndUpdate.mockResolvedValueOnce({
-        _id: "c1",
-        name: "NewName",
-        slug: "newname",
+  describe('updateCategoryController', () => {
+    it('updates category by ID and returns 200', async () => {
+      const updated = { _id: 'c1', name: 'Updated', slug: 'updated' };
+      categoryModel.findByIdAndUpdate.mockResolvedValue(updated);
+
+      const req = mockReq({
+        body: { name: 'Updated' },
+        params: { id: 'c1' },
       });
+      const res = mockRes();
 
       await updateCategoryController(req, res);
 
       expect(categoryModel.findByIdAndUpdate).toHaveBeenCalledWith(
-        "c1",
-        { name: "NewName", slug: "newname" },
-        { new: true }
+        'c1',
+        { name: 'Updated', slug: 'updated' },
+        { new: true },
       );
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: true,
-          category: { _id: "c1", name: "NewName", slug: "newname" },
-        })
-      );
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        message: 'Category Updated Successfully',
+        category: updated,
+      });
     });
 
-    test("returns 500 when update throws", async () => {
-      const req = { body: { name: "X" }, params: { id: "c1" } };
+    it('uses slugify for the new slug', async () => {
+      categoryModel.findByIdAndUpdate.mockResolvedValue({});
+
+      const req = mockReq({
+        body: { name: 'My Category' },
+        params: { id: 'c1' },
+      });
       const res = mockRes();
 
-      categoryModel.findByIdAndUpdate.mockRejectedValueOnce(
-        new Error("update fail")
-      );
+      await updateCategoryController(req, res);
+
+      expect(slugify).toHaveBeenCalledWith('My Category');
+    });
+
+    it('returns 500 on database error', async () => {
+      const dbError = new Error('DB fail');
+      categoryModel.findByIdAndUpdate.mockRejectedValue(dbError);
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const req = mockReq({
+        body: { name: 'Test' },
+        params: { id: 'c1' },
+      });
+      const res = mockRes();
 
       await updateCategoryController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          message: "Error while updating category",
-        })
-      );
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        error: dbError,
+        message: 'Error while updating category',
+      });
+
+      consoleSpy.mockRestore();
     });
   });
 
-  describe("categoryControlller (get all)", () => {
-    test("returns 200 with categories", async () => {
-      const req = {};
-      const res = mockRes();
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 3. categoryControlller (get all)
+  // ═══════════════════════════════════════════════════════════════════════════
 
-      categoryModel.find.mockResolvedValueOnce([
-        { _id: "c1", name: "Shoes" },
-        { _id: "c2", name: "Hats" },
-      ]);
+  describe('categoryControlller (get all)', () => {
+    it('returns all categories with status 200', async () => {
+      const cats = [
+        { _id: 'c1', name: 'A', slug: 'a' },
+        { _id: 'c2', name: 'B', slug: 'b' },
+      ];
+      categoryModel.find.mockResolvedValue(cats);
+
+      const req = mockReq();
+      const res = mockRes();
 
       await categoryControlller(req, res);
 
@@ -219,106 +243,189 @@ describe("controllers/categoryController.js", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.send).toHaveBeenCalledWith({
         success: true,
-        message: "All Categories List",
-        category: [
-          { _id: "c1", name: "Shoes" },
-          { _id: "c2", name: "Hats" },
-        ],
+        message: 'All Categories List',
+        category: cats,
       });
     });
 
-    test("returns 500 when find throws", async () => {
-      const req = {};
+    it('returns empty array when no categories exist', async () => {
+      categoryModel.find.mockResolvedValue([]);
+
+      const req = mockReq();
       const res = mockRes();
 
-      categoryModel.find.mockRejectedValueOnce(new Error("find fail"));
+      await categoryControlller(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        message: 'All Categories List',
+        category: [],
+      });
+    });
+
+    it('returns 500 on database error', async () => {
+      const dbError = new Error('Connection lost');
+      categoryModel.find.mockRejectedValue(dbError);
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const req = mockReq();
+      const res = mockRes();
 
       await categoryControlller(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          message: "Error while getting all categories",
-        })
-      );
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        error: dbError,
+        message: 'Error while getting all categories',
+      });
+
+      consoleSpy.mockRestore();
     });
   });
 
-  describe("singleCategoryController", () => {
-    test("returns 200 with a single category", async () => {
-      const req = { params: { slug: "shoes" } };
-      const res = mockRes();
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 4. singleCategoryController
+  // ═══════════════════════════════════════════════════════════════════════════
 
-      categoryModel.findOne.mockResolvedValueOnce({
-        _id: "c1",
-        name: "Shoes",
-        slug: "shoes",
-      });
+  describe('singleCategoryController', () => {
+    it('returns single category by slug with status 200', async () => {
+      const cat = { _id: 'c1', name: 'Electronics', slug: 'electronics' };
+      categoryModel.findOne.mockResolvedValue(cat);
+
+      const req = mockReq({ params: { slug: 'electronics' } });
+      const res = mockRes();
 
       await singleCategoryController(req, res);
 
-      expect(categoryModel.findOne).toHaveBeenCalledWith({ slug: "shoes" });
+      expect(categoryModel.findOne).toHaveBeenCalledWith({
+        slug: 'electronics',
+      });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.send).toHaveBeenCalledWith({
         success: true,
-        message: "Get SIngle Category SUccessfully",
-        category: { _id: "c1", name: "Shoes", slug: "shoes" },
+        message: 'Get Single Category Successfully',
+        category: cat,
       });
     });
 
-    test("returns 500 when findOne throws", async () => {
-      const req = { params: { slug: "shoes" } };
+    it('returns null category when slug not found', async () => {
+      categoryModel.findOne.mockResolvedValue(null);
+
+      const req = mockReq({ params: { slug: 'nonexistent' } });
       const res = mockRes();
 
-      categoryModel.findOne.mockRejectedValueOnce(new Error("findOne fail"));
+      await singleCategoryController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        message: 'Get Single Category Successfully',
+        category: null,
+      });
+    });
+
+    it('returns 500 on database error', async () => {
+      const dbError = new Error('DB error');
+      categoryModel.findOne.mockRejectedValue(dbError);
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const req = mockReq({ params: { slug: 'test' } });
+      const res = mockRes();
 
       await singleCategoryController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          message: "Error While getting Single Category",
-        })
-      );
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        error: dbError,
+        message: 'Error While getting Single Category',
+      });
+
+      consoleSpy.mockRestore();
     });
   });
 
-  describe("deleteCategoryCOntroller", () => {
-    test("deletes category and returns 200", async () => {
-      const req = { params: { id: "c1" } };
-      const res = mockRes();
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 5. deleteCategoryCOntroller
+  // ═══════════════════════════════════════════════════════════════════════════
 
-      categoryModel.findByIdAndDelete.mockResolvedValueOnce({});
+  describe('deleteCategoryCOntroller', () => {
+    it('deletes category by ID and returns 200', async () => {
+      categoryModel.findByIdAndDelete.mockResolvedValue({
+        _id: 'c1',
+        name: 'Electronics',
+      });
+
+      const req = mockReq({ params: { id: 'c1' } });
+      const res = mockRes();
 
       await deleteCategoryCOntroller(req, res);
 
-      expect(categoryModel.findByIdAndDelete).toHaveBeenCalledWith("c1");
+      expect(categoryModel.findByIdAndDelete).toHaveBeenCalledWith('c1');
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.send).toHaveBeenCalledWith({
         success: true,
-        message: "Categry Deleted Successfully",
+        message: 'Category Deleted Successfully',
       });
     });
 
-    test("returns 500 when delete throws", async () => {
-      const req = { params: { id: "c1" } };
-      const res = mockRes();
+    it('returns 500 on database error', async () => {
+      const dbError = new Error('Cannot delete');
+      categoryModel.findByIdAndDelete.mockRejectedValue(dbError);
 
-      categoryModel.findByIdAndDelete.mockRejectedValueOnce(
-        new Error("delete fail")
-      );
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const req = mockReq({ params: { id: 'c1' } });
+      const res = mockRes();
 
       await deleteCategoryCOntroller(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          success: false,
-          message: "error while deleting category",
-        })
-      );
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: 'error while deleting category',
+        error: dbError,
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it('does not throw when category ID does not exist', async () => {
+      categoryModel.findByIdAndDelete.mockResolvedValue(null);
+
+      const req = mockReq({ params: { id: 'nonexistent' } });
+      const res = mockRes();
+
+      await deleteCategoryCOntroller(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        message: 'Category Deleted Successfully',
+      });
     });
   });
 });
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * BUGS FIXED:
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * 1. TYPO `errro` IN createCategoryController CATCH BLOCK → fixed to `error`
+ * 2. DUPLICATE CATEGORY RETURNS 200 + success:true → fixed to 409 + success:false
+ * 3. TYPO `messsage` IN updateCategoryController → fixed to `message`
+ * 4. TYPOS IN RESPONSE MESSAGES → all fixed
+ *    - "Category Already Exisits" → "Category Already Exists"
+ *    - "Categry Deleted Successfully" → "Category Deleted Successfully"
+ *    - "Get SIngle Category SUccessfully" → "Get Single Category Successfully"
+ *    - "Errro in Category" → "Error in Category"
+ *
+ * REMAINING CONCERNS (not fixed — would require broader refactoring):
+ * - Function name typos: categoryControlller, deleteCategoryCOntroller
+ *   (changing exports would break routes and other consumers)
+ * - No validation in updateCategoryController for empty name
+ * - singleCategoryController returns 200 for not-found slugs
+ * - deleteCategoryCOntroller returns 200 for non-existent IDs
+ */

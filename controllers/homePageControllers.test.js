@@ -170,7 +170,7 @@ describe('productCountController – GET /api/v1/product/product-count', () => {
     expect(res.send).toHaveBeenCalledWith(
       expect.objectContaining({
         success: false,
-        message: 'Error in product count',
+        message: 'Error in Product Count',
       }),
     );
     consoleSpy.mockRestore();
@@ -288,7 +288,7 @@ describe('productListController – GET /api/v1/product/product-list/:page', () 
     expect(res.send).toHaveBeenCalledWith(
       expect.objectContaining({
         success: false,
-        message: 'error in per page ctrl',
+        message: 'Error in Per Page Controller',
       }),
     );
     consoleSpy.mockRestore();
@@ -412,7 +412,7 @@ describe('productFiltersController – POST /api/v1/product/product-filters', ()
     expect(res.send).toHaveBeenCalledWith(
       expect.objectContaining({
         success: false,
-        message: 'Error WHile Filtering Products',
+        message: 'Error while Filtering Products',
       }),
     );
     consoleSpy.mockRestore();

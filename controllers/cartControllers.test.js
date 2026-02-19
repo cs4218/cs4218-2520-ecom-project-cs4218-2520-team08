@@ -237,11 +237,7 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
     expect(orderModel).not.toHaveBeenCalled();
   });
 
-  it('handles empty cart (total = 0)', async () => {
-    mockSale.mockImplementation((opts, cb) => {
-      cb(null, { success: true });
-    });
-
+  it('rejects empty cart with 400', async () => {
     const req = mockRequest({
       body: { nonce: 'nonce', cart: [] },
       user: { _id: 'u1' },
@@ -250,7 +246,9 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
 
     await brainTreePaymentController(req, res);
 
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 0 }), expect.any(Function));
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith({ error: 'Invalid cart' });
+    expect(mockSale).not.toHaveBeenCalled();
   });
 
   it('handles cart with free items (price = 0)', async () => {
@@ -306,7 +304,7 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
 
     expect(consoleSpy).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: 'Error in payment' }));
+    expect(res.send).toHaveBeenCalledWith(expect.any(Error));
     consoleSpy.mockRestore();
   });
 

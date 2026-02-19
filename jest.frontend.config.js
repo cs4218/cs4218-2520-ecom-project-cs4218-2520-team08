@@ -22,9 +22,13 @@ module.exports = {
   // only run these tests
   testMatch: [
     "<rootDir>/client/src/pages/Auth/*.test.js",
+    "<rootDir>/client/src/hooks/useCategory.test.js",
+    "<rootDir>/client/src/pages/Categories.test.js",
+    "<rootDir>/client/src/pages/CategoryProduct.test.js",
+    "<rootDir>/client/src/pages/admin/CreateCategory.test.js",
     "<rootDir>/client/src/pages/CartPage.test.js",
-    "<rootDir>/client/src/context/cart.test.js"
-    "<rootDir>/client/src/pages/HomePage.test.js"
+    "<rootDir>/client/src/context/cart.test.js",
+    "<rootDir>/client/src/pages/HomePage.test.js",
     "<rootDir>/client/src/context/*.test.js",
     "<rootDir>/client/src/components/**/*.test.js",
     "<rootDir>/client/src/pages/user/*.test.js",
@@ -36,6 +40,10 @@ module.exports = {
   collectCoverage: true,
   collectCoverageFrom: [
     "client/src/pages/Auth/**",
+    "client/src/hooks/useCategory.js",
+    "client/src/pages/Categories.js",
+    "client/src/pages/admin/CreateCategory.js",
+    "client/src/components/Form/CategoryForm.js",
     "client/src/context/auth.js",
     "client/src/components/Routes/Private.js",
     "client/src/components/UserMenu.js",
