@@ -20,7 +20,10 @@ const CartPage = () => {
   //total price
   const totalPrice = () => {
     try {
-      let total = cart?.reduce((acc, item) => acc + item.price, 0) || 0;
+      let total = 0;
+      cart?.forEach((item) => {
+        total = total + (Number(item.price) || 0);
+      });
       return total.toLocaleString("en-US", {
         style: "currency",
         currency: "USD",
@@ -86,7 +89,7 @@ const CartPage = () => {
                 : `Hello  ${auth?.token && auth?.user?.name}`}
               <p className="text-center">
                 {cart?.length
-                  ? `You Have ${cart.length} items in your cart ${
+                  ? `You Have ${cart.length} ${cart.length === 1 ? "item" : "items"} in your cart ${
                       auth?.token ? "" : "please login to checkout !"
                     }`
                   : " Your Cart Is Empty"}
