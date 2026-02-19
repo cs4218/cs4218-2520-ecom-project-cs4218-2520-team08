@@ -5,38 +5,75 @@ import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import "../../styles/AuthStyles.css";
 import { useAuth } from "../../context/auth";
+import {
+  containsXSS,
+  containsSQLInjection,
+  isNotWhitespaceOnly,
+} from "../../helpers/validationHelper";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [auth, setAuth] = useAuth();
-  
 
   const navigate = useNavigate();
   const location = useLocation();
-  
+
+  const validateForm = () => {
+    if (!isNotWhitespaceOnly(password)) {
+      toast.error("Password cannot be whitespace only");
+      return false;
+    }
+
+    // Check for XSS attempts
+    if (containsXSS(password)) {
+      toast.error("Invalid characters detected");
+      return false;
+    }
+
+    // Check for SQL injection attempts
+    if (containsSQLInjection(email) || containsSQLInjection(password)) {
+      toast.error("Invalid characters detected");
+      return false;
+    }
+
+    return true;
+  };
 
   // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const res = await axios.post("/api/v1/auth/login", {
         email,
         password,
       });
-      if (res && res.data.success) {
+      if (!res || !res.data) {
+        toast.error("Invalid login response");
+        return;
+      }
+      if (res.data.success) {
+        if (res.data.user == null) {
+          toast.error("Invalid login response");
+          return;
+        }
         toast.success(res.data && res.data.message, {
-            duration: 5000,
-            icon: "🙏",
-            style: {
-              background: "green",
-              color: "white",
-            },
-          });
+          duration: 5000,
+          icon: "🙏",
+          style: {
+            background: "green",
+            color: "white",
+          },
+        });
         setAuth({
-            ...auth,
-            user: res.data.user,
-            token: res.data.token,
+          ...auth,
+          user: res.data.user,
+          token: res.data.token,
         });
         localStorage.setItem("auth", JSON.stringify(res.data));
         navigate(location.state || "/");
