@@ -74,6 +74,7 @@ const CartPage = () => {
       toast.success("Payment Completed Successfully ");
     } catch (error) {
       console.log(error);
+      toast.error("Payment failed");
       setLoading(false);
     }
   };
