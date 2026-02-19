@@ -123,14 +123,9 @@ const loggedInUserNoAddress = {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 const setupLocalStorage = () => {
-  Object.defineProperty(window, 'localStorage', {
-    value: {
-      setItem: jest.fn(),
-      getItem: jest.fn(),
-      removeItem: jest.fn(),
-    },
-    writable: true,
-  });
+  jest.spyOn(window.localStorage.__proto__, 'setItem').mockImplementation(jest.fn());
+  jest.spyOn(window.localStorage.__proto__, 'getItem').mockImplementation(jest.fn());
+  jest.spyOn(window.localStorage.__proto__, 'removeItem').mockImplementation(jest.fn());
 };
 
 const renderCartPage = () =>

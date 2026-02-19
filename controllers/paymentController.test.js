@@ -370,33 +370,34 @@ describe('brainTreePaymentController', () => {
   });
 
   // ── Missing/null/empty cart [BUG-3] ────────────────────────────────────
-  test('should return 500 when cart is null [BUG-3 FIXED]', async () => {
+  test('should return 400 when cart is null [BUG-3 FIXED]', async () => {
     req = makeReq({ nonce: validNonce, cart: null }, fakeUser);
 
     await brainTreePaymentController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith({ error: 'Invalid cart' });
     expect(res.json).not.toHaveBeenCalled();
   });
 
-  test('should return 500 when cart is undefined [BUG-3 FIXED]', async () => {
+  test('should return 400 when cart is undefined [BUG-3 FIXED]', async () => {
     req = makeReq({ nonce: validNonce }, fakeUser);
 
     await brainTreePaymentController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith({ error: 'Invalid cart' });
     expect(res.json).not.toHaveBeenCalled();
   });
 
-  test('should handle empty cart array (total = 0)', async () => {
+  test('should return 400 for empty cart array [BUG-3 FIXED]', async () => {
     req = makeReq({ nonce: validNonce, cart: [] }, fakeUser);
-    mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
 
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 0 }), expect.any(Function));
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith({ error: 'Invalid cart' });
+    expect(mockSale).not.toHaveBeenCalled();
   });
 
   // ── Price validation issues [BUG-4] ────────────────────────────────────
@@ -413,17 +414,17 @@ describe('brainTreePaymentController', () => {
     expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: -40 }), expect.any(Function));
   });
 
-  test('should send NaN total when cart item has undefined price [BUG-4]', async () => {
+  test('should default undefined price to 0 via Number() guard [BUG-4 FIXED]', async () => {
     const badCart = [{ _id: 'p1', price: 10 }, { _id: 'p2' }];
     req = makeReq({ nonce: validNonce, cart: badCart }, fakeUser);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
 
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: NaN }), expect.any(Function));
+    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 10 }), expect.any(Function));
   });
 
-  test('should send string-concatenated total when price is a string [BUG-4]', async () => {
+  test('should convert string prices to numbers via Number() [BUG-4 FIXED]', async () => {
     const stringCart = [
       { _id: 'p1', price: '10' },
       { _id: 'p2', price: '20' },
@@ -433,7 +434,7 @@ describe('brainTreePaymentController', () => {
 
     await brainTreePaymentController(req, res);
 
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: '01020' }), expect.any(Function));
+    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 30 }), expect.any(Function));
   });
 
   // ── Price manipulation (SEC-2) ─────────────────────────────────────────
@@ -589,12 +590,12 @@ describe('brainTreePaymentController', () => {
   });
 
   // ── Body completely missing ────────────────────────────────────────────
-  test('should return 500 for completely empty request body (no cart) [BUG-3 FIXED]', async () => {
+  test('should return 400 for completely empty request body (no cart) [BUG-3 FIXED]', async () => {
     req = makeReq({}, fakeUser);
 
     await brainTreePaymentController(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith({ error: 'Invalid cart' });
     expect(res.json).not.toHaveBeenCalled();
   });

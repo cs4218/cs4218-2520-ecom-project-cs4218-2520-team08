@@ -98,10 +98,8 @@ describe('categoryController', () => {
         name: 'Electronics',
         slug: 'electronics',
       };
-      // new categoryModel({...}).save() chain
-      categoryModel.mockImplementation(() => ({
-        save: jest.fn().mockResolvedValue(savedCategory),
-      }));
+      // controller uses categoryModel.create()
+      categoryModel.create = jest.fn().mockResolvedValue(savedCategory);
 
       const req = mockReq({ body: { name: 'Electronics' } });
       const res = mockRes();
