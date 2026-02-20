@@ -1,26 +1,34 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useParams, useNavigate } from "react-router-dom";
+import { useCart } from "../context/cart";
+import toast from "react-hot-toast";
 import "../styles/CategoryProductStyles.css";
 import axios from "axios";
 const CategoryProduct = () => {
   const params = useParams();
   const navigate = useNavigate();
+  const [cart, setCart] = useCart();
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (params?.slug) getPrductsByCat();
   }, [params?.slug]);
   const getPrductsByCat = async () => {
     try {
+      setLoading(true);
       const { data } = await axios.get(
         `/api/v1/product/product-category/${params.slug}`
       );
       setProducts(data?.products);
       setCategory(data?.category);
+      setLoading(false);
     } catch (error) {
       console.log(error);
+      setLoading(false);
     }
   };
 
@@ -28,11 +36,11 @@ const CategoryProduct = () => {
     <Layout>
       <div className="container mt-3 category">
         <h4 className="text-center">Category - {category?.name}</h4>
-        <h6 className="text-center">{products?.length} result found </h6>
+        <h6 className="text-center">{products?.length} result{products?.length !== 1 ? "s" : ""} found </h6>
         <div className="row">
           <div className="col-md-9 offset-1">
             <div className="d-flex flex-wrap">
-              {products?.map((p) => (
+              {products?.slice(0, page * 6).map((p) => (
                 <div className="card m-2" key={p._id}>
                   <img
                     src={`/api/v1/product/product-photo/${p._id}`}
@@ -43,14 +51,14 @@ const CategoryProduct = () => {
                     <div className="card-name-price">
                       <h5 className="card-title">{p.name}</h5>
                       <h5 className="card-title card-price">
-                        {p.price.toLocaleString("en-US", {
+                        {(p.price || 0).toLocaleString("en-US", {
                           style: "currency",
                           currency: "USD",
                         })}
                       </h5>
                     </div>
                     <p className="card-text ">
-                      {p.description.substring(0, 60)}...
+                      {(p.description || "").substring(0, 60)}...
                     </p>
                     <div className="card-name-price">
                       <button
@@ -59,37 +67,37 @@ const CategoryProduct = () => {
                       >
                         More Details
                       </button>
-                      {/* <button
-                    className="btn btn-dark ms-1"
-                    onClick={() => {
-                      setCart([...cart, p]);
-                      localStorage.setItem(
-                        "cart",
-                        JSON.stringify([...cart, p])
-                      );
-                      toast.success("Item Added to cart");
-                    }}
-                  >
-                    ADD TO CART
-                  </button> */}
+                      <button
+                        className="btn btn-dark ms-1"
+                        onClick={() => {
+                          setCart([...cart, p]);
+                          localStorage.setItem(
+                            "cart",
+                            JSON.stringify([...cart, p])
+                          );
+                          toast.success("Item Added to cart");
+                        }}
+                      >
+                        ADD TO CART
+                      </button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            {/* <div className="m-2 p-3">
-            {products && products.length < total && (
-              <button
-                className="btn btn-warning"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setPage(page + 1);
-                }}
-              >
-                {loading ? "Loading ..." : "Loadmore"}
-              </button>
-            )}
-          </div> */}
+            <div className="m-2 p-3">
+              {products && page * 6 < products.length && (
+                <button
+                  className="btn btn-warning"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage(page + 1);
+                  }}
+                >
+                  {loading ? "Loading ..." : "Load more"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
