@@ -20,21 +20,7 @@ module.exports = {
   transformIgnorePatterns: ["/node_modules/(?!(styleMock\\.js)$)"],
 
   // only run these tests
-  testMatch: [
-    "<rootDir>/client/src/pages/Auth/*.test.js",
-    "<rootDir>/client/src/hooks/useCategory.test.js",
-    "<rootDir>/client/src/pages/Categories.test.js",
-    "<rootDir>/client/src/pages/CategoryProduct.test.js",
-    "<rootDir>/client/src/pages/admin/CreateCategory.test.js",
-    "<rootDir>/client/src/pages/CartPage.test.js",
-    "<rootDir>/client/src/context/cart.test.js",
-    "<rootDir>/client/src/pages/HomePage.test.js",
-    "<rootDir>/client/src/context/*.test.js",
-    "<rootDir>/client/src/components/**/*.test.js",
-    "<rootDir>/client/src/pages/user/*.test.js",
-    "<rootDir>/client/src/helpers/*.test.js",
-    "<rootDir>/client/src/pages/*.test.js",
-  ],
+  testMatch: ["<rootDir>/client/src/**/*.test.js"],
 
   // jest code coverage
   collectCoverage: true,
@@ -60,6 +46,12 @@ module.exports = {
     "client/src/components/Prices.js",
     "client/src/pages/CartPage.js",
     "client/src/context/cart.js",
+    "client/src/pages/user/Orders.js",
+    "client/src/pages/user/Profile.js",
+    "client/src/pages/admin/Users.js",
+    "client/src/pages/Search.js",
+    "client/src/components/Form/SearchInput.js",
+    "client/src/context/search.js",
   ],
   coverageThreshold: {
     global: {

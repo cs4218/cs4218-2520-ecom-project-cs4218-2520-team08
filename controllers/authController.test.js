@@ -1,17 +1,57 @@
+import { jest } from "@jest/globals";
+
+// Mocks defined inside factories so Jest hoisting does not cause "before initialization" errors
+jest.mock("../models/userModel.js", () => {
+  const mockUserModel = jest.fn(function User(doc) {
+    Object.assign(this, doc);
+    this.save = jest.fn().mockResolvedValue(this);
+  });
+  mockUserModel.findOne = jest.fn();
+  mockUserModel.findById = jest.fn();
+  mockUserModel.findByIdAndUpdate = jest.fn();
+  return { __esModule: true, default: mockUserModel };
+});
+jest.mock("../models/orderModel.js", () => {
+  const mockOrderModel = {
+    find: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+  };
+  return { __esModule: true, default: mockOrderModel };
+});
+jest.mock("../helpers/authHelper.js", () => ({
+  __esModule: true,
+  comparePassword: jest.fn(),
+  hashPassword: jest.fn(),
+}));
+jest.mock("jsonwebtoken", () => ({
+  __esModule: true,
+  default: { sign: jest.fn() },
+}));
+
 import userModel from "../models/userModel.js";
+import orderModel from "../models/orderModel.js";
 import { hashPassword, comparePassword } from "../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
-
 import {
   registerController,
   loginController,
   forgotPasswordController,
   testController,
+  updateProfileController,
+  getOrdersController,
+  getAllOrdersController,
+  orderStatusController,
 } from "./authController.js";
 
-jest.mock("../models/userModel.js");
-jest.mock("../helpers/authHelper.js");
-jest.mock("jsonwebtoken");
+function createRes() {
+  return {
+    status: jest.fn(function status() {
+      return this;
+    }),
+    send: jest.fn(),
+    json: jest.fn(),
+  };
+}
 
 describe("authController", () => {
   let mockReq, mockRes;
@@ -2132,6 +2172,291 @@ describe("authController", () => {
 
       expect(() => testController(mockReq, mockRes)).not.toThrow();
       expect(mockRes.send).toHaveBeenCalled();
+    });
+  });
+
+  describe("updateProfileController", () => {
+    it("returns early with res.json error when password is shorter than 6 characters", async () => {
+      // Arrange
+      userModel.findById.mockResolvedValueOnce({
+        name: "Existing",
+        password: "existingPw",
+        phone: "111",
+        address: "Addr",
+      });
+      const req = {
+        body: { password: "123" },
+        user: { _id: "u1" },
+      };
+      const res = createRes();
+
+      // Act
+      await updateProfileController(req, res);
+
+      // Assert
+      expect(userModel.findById).toHaveBeenCalledWith("u1");
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Passsword is required and 6 character long",
+      });
+      expect(hashPassword).not.toHaveBeenCalled();
+      expect(userModel.findByIdAndUpdate).not.toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it("updates profile using existing values when optional fields are missing and password is not provided", async () => {
+      // Arrange
+      const existingUser = {
+        name: "Existing",
+        password: "existingPw",
+        phone: "111",
+        address: "Addr",
+      };
+      const updatedUser = { ...existingUser, _id: "u1" };
+      userModel.findById.mockResolvedValueOnce(existingUser);
+      userModel.findByIdAndUpdate.mockResolvedValueOnce(updatedUser);
+      const req = {
+        body: {},
+        user: { _id: "u1" },
+      };
+      const res = createRes();
+
+      // Act
+      await updateProfileController(req, res);
+
+      // Assert
+      expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "u1",
+        {
+          name: "Existing",
+          password: "existingPw",
+          phone: "111",
+          address: "Addr",
+        },
+        { new: true }
+      );
+      expect(hashPassword).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        message: "Profile Updated SUccessfully",
+        updatedUser,
+      });
+    });
+
+    it("hashes password and updates provided fields when valid password is supplied", async () => {
+      // Arrange
+      userModel.findById.mockResolvedValueOnce({
+        name: "Existing",
+        password: "existingPw",
+        phone: "111",
+        address: "Addr",
+      });
+      hashPassword.mockResolvedValueOnce("hashedPw");
+      const updatedUser = {
+        _id: "u1",
+        name: "New Name",
+        password: "hashedPw",
+        phone: "999",
+        address: "New Address",
+      };
+      userModel.findByIdAndUpdate.mockResolvedValueOnce(updatedUser);
+      const req = {
+        body: {
+          name: "New Name",
+          email: "ignored@example.com",
+          password: "123456",
+          phone: "999",
+          address: "New Address",
+        },
+        user: { _id: "u1" },
+      };
+      const res = createRes();
+
+      // Act
+      await updateProfileController(req, res);
+
+      // Assert
+      expect(hashPassword).toHaveBeenCalledWith("123456");
+      expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "u1",
+        {
+          name: "New Name",
+          password: "hashedPw",
+          phone: "999",
+          address: "New Address",
+        },
+        { new: true }
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        message: "Profile Updated SUccessfully",
+        updatedUser,
+      });
+    });
+
+    it("returns 400 when an error is thrown while updating profile", async () => {
+      // Arrange
+      const err = new Error("db down");
+      userModel.findById.mockRejectedValueOnce(err);
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      const req = {
+        body: { name: "N" },
+        user: { _id: "u1" },
+      };
+      const res = createRes();
+
+      // Act
+      await updateProfileController(req, res);
+
+      // Assert
+      expect(logSpy).toHaveBeenCalledWith(err);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error WHile Update profile",
+        error: err,
+      });
+      logSpy.mockRestore();
+    });
+  });
+
+  describe("getOrdersController", () => {
+    it("returns orders for the authenticated buyer and calls populate twice", async () => {
+      // Arrange
+      const orders = [{ _id: "o1" }, { _id: "o2" }];
+      const query = { populate: jest.fn() };
+      orderModel.find.mockReturnValueOnce(query);
+      query.populate
+        .mockImplementationOnce(() => query) // populate products
+        .mockImplementationOnce(() => Promise.resolve(orders)); // populate buyer + resolve query
+
+      const req = { user: { _id: "u1" } };
+      const res = createRes();
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(orderModel.find).toHaveBeenCalledWith({ buyer: "u1" });
+      expect(query.populate).toHaveBeenNthCalledWith(1, "products", "-photo");
+      expect(query.populate).toHaveBeenNthCalledWith(2, "buyer", "name");
+      expect(res.json).toHaveBeenCalledWith(orders);
+    });
+
+    it("returns 500 when an error occurs while fetching orders", async () => {
+      // Arrange
+      const err = new Error("query failed");
+      orderModel.find.mockImplementationOnce(() => {
+        throw err;
+      });
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      const req = { user: { _id: "u1" } };
+      const res = createRes();
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(logSpy).toHaveBeenCalledWith(err);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error WHile Geting Orders",
+        error: err,
+      });
+      logSpy.mockRestore();
+    });
+  });
+
+  describe("getAllOrdersController", () => {
+    it("returns all orders and sorts by createdAt descending", async () => {
+      // Arrange
+      const orders = [{ _id: "o1" }];
+      const query = { populate: jest.fn(), sort: jest.fn() };
+      orderModel.find.mockReturnValueOnce(query);
+      query.populate.mockImplementationOnce(() => query).mockImplementationOnce(() => query);
+      query.sort.mockResolvedValueOnce(orders);
+      const req = {};
+      const res = createRes();
+
+      // Act
+      await getAllOrdersController(req, res);
+
+      // Assert
+      expect(orderModel.find).toHaveBeenCalledWith({});
+      expect(query.populate).toHaveBeenNthCalledWith(1, "products", "-photo");
+      expect(query.populate).toHaveBeenNthCalledWith(2, "buyer", "name");
+      expect(query.sort).toHaveBeenCalledWith({ createdAt: "-1" });
+      expect(res.json).toHaveBeenCalledWith(orders);
+    });
+
+    it("returns 500 when an error occurs while fetching all orders", async () => {
+      // Arrange
+      const err = new Error("sort failed");
+      const query = { populate: jest.fn(), sort: jest.fn() };
+      orderModel.find.mockReturnValueOnce(query);
+      query.populate.mockImplementationOnce(() => query).mockImplementationOnce(() => query);
+      query.sort.mockRejectedValueOnce(err);
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      const req = {};
+      const res = createRes();
+
+      // Act
+      await getAllOrdersController(req, res);
+
+      // Assert
+      expect(logSpy).toHaveBeenCalledWith(err);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error WHile Geting Orders",
+        error: err,
+      });
+      logSpy.mockRestore();
+    });
+  });
+
+  describe("orderStatusController", () => {
+    it("updates order status by orderId and returns updated order", async () => {
+      // Arrange
+      const updatedOrder = { _id: "o1", status: "Shipped" };
+      orderModel.findByIdAndUpdate.mockResolvedValueOnce(updatedOrder);
+      const req = { params: { orderId: "o1" }, body: { status: "Shipped" } };
+      const res = createRes();
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "o1",
+        { status: "Shipped" },
+        { new: true }
+      );
+      expect(res.json).toHaveBeenCalledWith(updatedOrder);
+    });
+
+    it("returns 500 when an error occurs while updating order status", async () => {
+      // Arrange
+      const err = new Error("update failed");
+      orderModel.findByIdAndUpdate.mockRejectedValueOnce(err);
+      const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      const req = { params: { orderId: "o1" }, body: { status: "cancel" } };
+      const res = createRes();
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(logSpy).toHaveBeenCalledWith(err);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error While Updateing Order",
+        error: err,
+      });
+      logSpy.mockRestore();
     });
   });
 });

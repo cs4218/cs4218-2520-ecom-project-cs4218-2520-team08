@@ -12,23 +12,24 @@ module.exports = {
 
   // which test to run
   testMatch: [
-    "<rootDir>/controllers/*.test.js",
-    "<rootDir>/helpers/*.test.js",
-    "<rootDir>/middlewares/*.test.js",
-    "<rootDir>/models/*.test.js",
-    "<rootDir>/config/*.test.js",
+    "<rootDir>/controllers/**/*.test.js",
+    "<rootDir>/models/**/*.test.js",
+    "<rootDir>/helpers/**/*.test.js",
+    "<rootDir>/middlewares/**/*.test.js",
+    "<rootDir>/config/**/*.test.js",
   ],
 
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: [
     "controllers/authController.js",
-    "helpers/authHelper.js",
-    "middlewares/authMiddleware.js",
-    "models/userModel.js",
     "controllers/productController.js",
+    "helpers/authHelper.js",
     "helpers/productHelper.js",
+    "middlewares/authMiddleware.js",
     "middlewares/productMiddleware.js",
+    "models/orderModel.js",
+    "models/userModel.js",
     "models/productModel.js",
     "config/db.js",
   ],
