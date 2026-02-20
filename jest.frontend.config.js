@@ -53,7 +53,6 @@ module.exports = {
     "client/src/components/Form/SearchInput.js",
     "client/src/context/search.js",
   ],
-  ],
   coverageThreshold: {
     global: {
       lines: 80,
