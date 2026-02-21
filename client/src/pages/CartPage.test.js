@@ -658,8 +658,15 @@ describe('CartPage – Unit Tests', () => {
     });
 
     it("shows 'Processing ....' while payment is in progress", async () => {
-      // Make payment take time
+      // Make both requestPaymentMethod and axios.post controllable
+      let resolveNonce;
       let resolvePayment;
+      mockDropInInstance.requestPaymentMethod.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveNonce = resolve;
+          }),
+      );
       axios.post.mockImplementation(
         () =>
           new Promise((resolve) => {
@@ -676,11 +683,20 @@ describe('CartPage – Unit Tests', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /Make Payment/i }));
 
+      // Button should immediately show Processing after click
       await waitFor(() => {
         expect(screen.getByText('Processing ....')).toBeInTheDocument();
       });
 
-      // Resolve payment
+      // Resolve nonce so axios.post is called (still hangs)
+      await act(async () => {
+        resolveNonce({ nonce: 'test-nonce-123' });
+      });
+
+      // Still processing while axios.post hangs
+      expect(screen.getByText('Processing ....')).toBeInTheDocument();
+
+      // Resolve payment to clean up
       await act(async () => {
         resolvePayment({ data: { ok: true } });
       });
@@ -688,7 +704,13 @@ describe('CartPage – Unit Tests', () => {
 
     it('handles payment failure gracefully', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-      mockDropInInstance.requestPaymentMethod.mockRejectedValue(new Error('Payment Failed'));
+      let rejectPayment;
+      mockDropInInstance.requestPaymentMethod.mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            rejectPayment = reject;
+          }),
+      );
 
       mockCart = [makeProduct(1)];
       renderCartPage();
@@ -698,6 +720,11 @@ describe('CartPage – Unit Tests', () => {
       });
 
       fireEvent.click(screen.getByRole('button', { name: /Make Payment/i }));
+
+      // Now reject the payment method request
+      await act(async () => {
+        rejectPayment(new Error('Payment Failed'));
+      });
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalled();
@@ -712,7 +739,13 @@ describe('CartPage – Unit Tests', () => {
 
     it('resets loading state on payment failure', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-      mockDropInInstance.requestPaymentMethod.mockRejectedValue(new Error('Fail'));
+      let rejectPayment;
+      mockDropInInstance.requestPaymentMethod.mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            rejectPayment = reject;
+          }),
+      );
 
       mockCart = [makeProduct(1)];
       renderCartPage();
@@ -722,6 +755,11 @@ describe('CartPage – Unit Tests', () => {
       });
 
       fireEvent.click(screen.getByRole('button', { name: /Make Payment/i }));
+
+      // Now reject the payment method request
+      await act(async () => {
+        rejectPayment(new Error('Fail'));
+      });
 
       await waitFor(() => {
         // After error, button should show "Make Payment" again (not "Processing")
@@ -733,6 +771,13 @@ describe('CartPage – Unit Tests', () => {
 
     it('handles API post failure gracefully', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      let resolveNonce;
+      mockDropInInstance.requestPaymentMethod.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveNonce = resolve;
+          }),
+      );
       axios.post.mockRejectedValue(new Error('Server Error'));
 
       mockCart = [makeProduct(1)];
@@ -743,6 +788,11 @@ describe('CartPage – Unit Tests', () => {
       });
 
       fireEvent.click(screen.getByRole('button', { name: /Make Payment/i }));
+
+      // Resolve nonce so axios.post is called (which will reject)
+      await act(async () => {
+        resolveNonce({ nonce: 'test-nonce-123' });
+      });
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalled();
