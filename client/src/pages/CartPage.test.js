@@ -128,17 +128,22 @@ const setupLocalStorage = () => {
   jest.spyOn(window.localStorage.__proto__, 'removeItem').mockImplementation(jest.fn());
 };
 
-const renderCartPage = () =>
-  render(
-    <MemoryRouter initialEntries={['/cart']}>
-      <Routes>
-        <Route path='/cart' element={<CartPage />} />
-        <Route path='/dashboard/user/orders' element={<div>Orders Page</div>} />
-        <Route path='/dashboard/user/profile' element={<div>Profile Page</div>} />
-        <Route path='/login' element={<div>Login Page</div>} />
-      </Routes>
-    </MemoryRouter>,
-  );
+const renderCartPage = async () => {
+  let result;
+  await act(async () => {
+    result = render(
+      <MemoryRouter initialEntries={['/cart']}>
+        <Routes>
+          <Route path='/cart' element={<CartPage />} />
+          <Route path='/dashboard/user/orders' element={<div>Orders Page</div>} />
+          <Route path='/dashboard/user/profile' element={<div>Profile Page</div>} />
+          <Route path='/login' element={<div>Login Page</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  });
+  return result;
+};
 
 // ─── Test Suite ─────────────────────────────────────────────────────────────
 
@@ -166,47 +171,47 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Guest user (not logged in)', () => {
-    it("displays 'Hello Guest' when no user is authenticated", () => {
-      renderCartPage();
+    it("displays 'Hello Guest' when no user is authenticated", async () => {
+      await renderCartPage();
       expect(screen.getByText('Hello Guest')).toBeInTheDocument();
     });
 
-    it("displays 'Your Cart Is Empty' when cart is empty", () => {
-      renderCartPage();
+    it("displays 'Your Cart Is Empty' when cart is empty", async () => {
+      await renderCartPage();
       expect(screen.getByText(/Your Cart Is Empty/)).toBeInTheDocument();
     });
 
-    it('displays item count and login prompt when cart has items', () => {
+    it('displays item count and login prompt when cart has items', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/You Have 1 item in your cart/)).toBeInTheDocument();
       expect(screen.getByText(/please login to checkout/)).toBeInTheDocument();
     });
 
-    it("shows 'Plase Login to checkout' button for guest", () => {
+    it("shows 'Plase Login to checkout' button for guest", async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByRole('button', { name: /Plase Login to checkout/i })).toBeInTheDocument();
     });
 
-    it('navigates to /login with state=/cart when login button is clicked', () => {
+    it('navigates to /login with state=/cart when login button is clicked', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       fireEvent.click(screen.getByRole('button', { name: /Plase Login to checkout/i }));
       expect(mockNavigate).toHaveBeenCalledWith('/login', {
         state: '/cart',
       });
     });
 
-    it('does NOT show braintree DropIn for guest', () => {
+    it('does NOT show braintree DropIn for guest', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.queryByTestId('braintree-dropin')).not.toBeInTheDocument();
     });
 
-    it('does NOT show payment button for guest', () => {
+    it('does NOT show payment button for guest', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.queryByRole('button', { name: /Make Payment/i })).not.toBeInTheDocument();
     });
   });
@@ -220,34 +225,34 @@ describe('CartPage – Unit Tests', () => {
       mockAuth = loggedInUser;
     });
 
-    it("displays 'Hello  {name}' for authenticated user", () => {
-      renderCartPage();
+    it("displays 'Hello  {name}' for authenticated user", async () => {
+      await renderCartPage();
       expect(screen.getByText(/Hello\s+Test User/)).toBeInTheDocument();
     });
 
-    it('displays item count without login prompt when authenticated', () => {
+    it('displays item count without login prompt when authenticated', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/You Have 1 item in your cart/)).toBeInTheDocument();
       expect(screen.queryByText(/please login to checkout/)).not.toBeInTheDocument();
     });
 
-    it('shows current address', () => {
+    it('shows current address', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText('Current Address')).toBeInTheDocument();
       expect(screen.getByText('123 Test Street')).toBeInTheDocument();
     });
 
-    it("shows 'Update Address' button", () => {
+    it("shows 'Update Address' button", async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByRole('button', { name: /Update Address/i })).toBeInTheDocument();
     });
 
-    it("navigates to profile page when 'Update Address' is clicked", () => {
+    it("navigates to profile page when 'Update Address' is clicked", async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       fireEvent.click(screen.getByRole('button', { name: /Update Address/i }));
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard/user/profile');
     });
@@ -258,9 +263,9 @@ describe('CartPage – Unit Tests', () => {
       mockAuth = loggedInUserNoAddress;
     });
 
-    it("shows 'Update Address' button instead of current address", () => {
+    it("shows 'Update Address' button instead of current address", async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.queryByText('Current Address')).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Update Address/i })).toBeInTheDocument();
     });
@@ -275,44 +280,44 @@ describe('CartPage – Unit Tests', () => {
       mockAuth = loggedInUser;
     });
 
-    it('renders all cart items', () => {
+    it('renders all cart items', async () => {
       mockCart = sampleProducts;
-      renderCartPage();
+      await renderCartPage();
       sampleProducts.forEach((p) => {
         expect(screen.getByText(p.name)).toBeInTheDocument();
       });
     });
 
-    it('renders product images with correct src', () => {
+    it('renders product images with correct src', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       const img = screen.getByAltText('Product 1');
       expect(img).toHaveAttribute('src', '/api/v1/product/product-photo/prod1');
     });
 
-    it('renders truncated descriptions (30 chars)', () => {
+    it('renders truncated descriptions (30 chars)', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       const truncated = makeProduct(1).description.substring(0, 30);
       expect(screen.getByText(truncated)).toBeInTheDocument();
     });
 
-    it('renders product price', () => {
+    it('renders product price', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/Price : 30.99/)).toBeInTheDocument();
     });
 
-    it('renders a Remove button for each item', () => {
+    it('renders a Remove button for each item', async () => {
       mockCart = sampleProducts;
-      renderCartPage();
+      await renderCartPage();
       const removeBtns = screen.getAllByRole('button', { name: /Remove/i });
       expect(removeBtns).toHaveLength(sampleProducts.length);
     });
 
-    it('renders no cart items when cart is empty', () => {
+    it('renders no cart items when cart is empty', async () => {
       mockCart = [];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.queryByRole('button', { name: /Remove/i })).not.toBeInTheDocument();
     });
   });
@@ -326,56 +331,59 @@ describe('CartPage – Unit Tests', () => {
       mockAuth = loggedInUser;
     });
 
-    it('calculates total from all item prices', () => {
+    it('calculates total from all item prices', async () => {
       mockCart = [makeProduct(1, { price: 10 }), makeProduct(2, { price: 20 }), makeProduct(3, { price: 30 })];
-      renderCartPage();
+      await renderCartPage();
       // 10 + 20 + 30 = $60.00
       expect(screen.getByText(/\$60\.00/)).toBeInTheDocument();
     });
 
-    it('shows $0.00 total when cart is empty', () => {
+    it('shows $0.00 total when cart is empty', async () => {
       mockCart = [];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/\$0\.00/)).toBeInTheDocument();
     });
 
-    it('handles single item total', () => {
+    it('handles single item total', async () => {
       mockCart = [makeProduct(1, { price: 42.5 })];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/\$42\.50/)).toBeInTheDocument();
     });
 
-    it('handles items with price 0', () => {
+    it('handles items with price 0', async () => {
       mockCart = [makeProduct(1, { price: 0 }), makeProduct(2, { price: 25 })];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/\$25\.00/)).toBeInTheDocument();
     });
 
     /**
      * totalPrice() now uses forEach with Number() || 0 guard.
      */
-    it('calculates correct total with many items', () => {
+    it('calculates correct total with many items', async () => {
       mockCart = Array.from({ length: 10 }, (_, i) => makeProduct(i, { price: 10 }));
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/\$100\.00/)).toBeInTheDocument();
     });
 
     /**
      * KNOWN ISSUE: No quantity support. Duplicate items are summed individually.
      */
-    it('sums duplicate items individually (no quantity support)', () => {
-      const item = makeProduct(1, { price: 15 });
-      mockCart = [item, { ...item }, { ...item }];
-      renderCartPage();
+    it('sums duplicate items individually (no quantity support)', async () => {
+      mockCart = [
+        makeProduct(1, { price: 15 }),
+        makeProduct('1b', { price: 15, name: 'Product 1 copy' }),
+        makeProduct('1c', { price: 15, name: 'Product 1 copy 2' }),
+      ];
+      await renderCartPage();
       expect(screen.getByText(/\$45\.00/)).toBeInTheDocument();
     });
 
     /**
      * FIXED: Items with missing price are now treated as 0 via Number() || 0.
      */
-    it('shows $0.00 total when item has no price field', () => {
+    it('shows $0.00 total when item has no price field', async () => {
       mockCart = [{ _id: 'x', name: 'No Price', description: 'short desc aaaaaaaaaaaaaaaaaaaaa' }];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/\$0\.00/)).toBeInTheDocument();
     });
   });
@@ -389,9 +397,9 @@ describe('CartPage – Unit Tests', () => {
       mockAuth = loggedInUser;
     });
 
-    it('calls setCart with item removed when Remove is clicked', () => {
+    it('calls setCart with item removed when Remove is clicked', async () => {
       mockCart = [makeProduct(1), makeProduct(2)];
-      renderCartPage();
+      await renderCartPage();
 
       const removeBtns = screen.getAllByRole('button', { name: /Remove/i });
       fireEvent.click(removeBtns[0]); // Remove first item
@@ -399,9 +407,9 @@ describe('CartPage – Unit Tests', () => {
       expect(mockSetCart).toHaveBeenCalledWith([expect.objectContaining({ _id: 'prod2' })]);
     });
 
-    it('updates localStorage when item is removed', () => {
+    it('updates localStorage when item is removed', async () => {
       mockCart = [makeProduct(1), makeProduct(2)];
-      renderCartPage();
+      await renderCartPage();
 
       fireEvent.click(screen.getAllByRole('button', { name: /Remove/i })[0]);
 
@@ -412,9 +420,9 @@ describe('CartPage – Unit Tests', () => {
       expect(stored[0]._id).toBe('prod2');
     });
 
-    it('removes the correct item when middle item is removed', () => {
+    it('removes the correct item when middle item is removed', async () => {
       mockCart = [makeProduct(1), makeProduct(2), makeProduct(3)];
-      renderCartPage();
+      await renderCartPage();
 
       const removeBtns = screen.getAllByRole('button', { name: /Remove/i });
       fireEvent.click(removeBtns[1]); // Remove middle item
@@ -425,9 +433,9 @@ describe('CartPage – Unit Tests', () => {
       ]);
     });
 
-    it('removes last remaining item from cart', () => {
+    it('removes last remaining item from cart', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       fireEvent.click(screen.getByRole('button', { name: /Remove/i }));
 
@@ -441,10 +449,16 @@ describe('CartPage – Unit Tests', () => {
      * If there are duplicate _ids, it only removes the FIRST occurrence,
      * not the one the user clicked. Not fixed in this PR.
      */
-    it('only removes first occurrence when duplicate _ids exist (known issue)', () => {
+    it('only removes first occurrence when duplicate _ids exist (known issue)', async () => {
+      // Suppress expected React key warning for this test (we intentionally use duplicate _ids)
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation((msg) => {
+        if (typeof msg === 'string' && msg.includes('same key')) return;
+        console.error.wrappedMethod?.call(console, msg);
+      });
+
       const dup = makeProduct(1, { name: 'Duplicate' });
       mockCart = [dup, { ...dup, name: 'Duplicate Copy' }];
-      renderCartPage();
+      await renderCartPage();
 
       // Click the second Remove button
       const removeBtns = screen.getAllByRole('button', { name: /Remove/i });
@@ -453,13 +467,15 @@ describe('CartPage – Unit Tests', () => {
       // findIndex finds the first match at index 0 and removes it
       // So the FIRST item is removed, not the second
       expect(mockSetCart).toHaveBeenCalledWith([expect.objectContaining({ name: 'Duplicate Copy' })]);
+
+      consoleSpy.mockRestore();
     });
 
-    it("handles removal from cart when _id doesn't exist (no crash)", () => {
+    it("handles removal from cart when _id doesn't exist (no crash)", async () => {
       // This won't happen in real flow, but tests resilience
       // findIndex returns -1, splice(-1, 1) removes last element
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       // This simulates internal state — in real usage the user
       // can only click Remove for items that are rendered
@@ -473,20 +489,20 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Cart summary section', () => {
-    it("renders 'Cart Summary' heading", () => {
-      renderCartPage();
+    it("renders 'Cart Summary' heading", async () => {
+      await renderCartPage();
       expect(screen.getByText('Cart Summary')).toBeInTheDocument();
     });
 
-    it("renders 'Total | Checkout | Payment' description", () => {
-      renderCartPage();
+    it("renders 'Total | Checkout | Payment' description", async () => {
+      await renderCartPage();
       expect(screen.getByText('Total | Checkout | Payment')).toBeInTheDocument();
     });
 
-    it('renders total price in summary', () => {
+    it('renders total price in summary', async () => {
       mockAuth = loggedInUser;
       mockCart = [makeProduct(1, { price: 99.99 })];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/\$99\.99/)).toBeInTheDocument();
     });
   });
@@ -501,7 +517,7 @@ describe('CartPage – Unit Tests', () => {
     });
 
     it('fetches braintree token on mount', async () => {
-      renderCartPage();
+      await renderCartPage();
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalledWith('/api/v1/product/braintree/token');
       });
@@ -509,7 +525,7 @@ describe('CartPage – Unit Tests', () => {
 
     it('renders DropIn when token, auth, and cart are present', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByTestId('braintree-dropin')).toBeInTheDocument();
@@ -518,7 +534,7 @@ describe('CartPage – Unit Tests', () => {
 
     it('does NOT render DropIn when cart is empty', async () => {
       mockCart = [];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalled();
@@ -530,7 +546,7 @@ describe('CartPage – Unit Tests', () => {
     it('does NOT render DropIn when user is not authenticated', async () => {
       mockAuth = { user: null, token: '' };
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalled();
@@ -544,7 +560,7 @@ describe('CartPage – Unit Tests', () => {
       mockDropInInstance = {
         requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: 'test-nonce' }),
       };
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
@@ -557,7 +573,7 @@ describe('CartPage – Unit Tests', () => {
       mockDropInInstance = {
         requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: 'test-nonce' }),
       };
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         const btn = screen.getByRole('button', { name: /Make Payment/i });
@@ -569,7 +585,7 @@ describe('CartPage – Unit Tests', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
       axios.get.mockRejectedValue(new Error('Token fetch failed'));
 
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalled();
@@ -595,7 +611,7 @@ describe('CartPage – Unit Tests', () => {
 
     it('sends payment request with nonce and cart on Make Payment click', async () => {
       mockCart = [makeProduct(1), makeProduct(2)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
@@ -613,7 +629,7 @@ describe('CartPage – Unit Tests', () => {
 
     it('clears cart and localStorage on successful payment', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
@@ -629,7 +645,7 @@ describe('CartPage – Unit Tests', () => {
 
     it('navigates to orders page after successful payment', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
@@ -644,7 +660,7 @@ describe('CartPage – Unit Tests', () => {
 
     it('shows success toast on successful payment', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
@@ -658,8 +674,15 @@ describe('CartPage – Unit Tests', () => {
     });
 
     it("shows 'Processing ....' while payment is in progress", async () => {
-      // Make payment take time
+      // Make both requestPaymentMethod and axios.post controllable
+      let resolveNonce;
       let resolvePayment;
+      mockDropInInstance.requestPaymentMethod.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveNonce = resolve;
+          }),
+      );
       axios.post.mockImplementation(
         () =>
           new Promise((resolve) => {
@@ -668,7 +691,7 @@ describe('CartPage – Unit Tests', () => {
       );
 
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
@@ -676,11 +699,20 @@ describe('CartPage – Unit Tests', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /Make Payment/i }));
 
+      // Button should immediately show Processing after click
       await waitFor(() => {
         expect(screen.getByText('Processing ....')).toBeInTheDocument();
       });
 
-      // Resolve payment
+      // Resolve nonce so axios.post is called (still hangs)
+      await act(async () => {
+        resolveNonce({ nonce: 'test-nonce-123' });
+      });
+
+      // Still processing while axios.post hangs
+      expect(screen.getByText('Processing ....')).toBeInTheDocument();
+
+      // Resolve payment to clean up
       await act(async () => {
         resolvePayment({ data: { ok: true } });
       });
@@ -688,16 +720,27 @@ describe('CartPage – Unit Tests', () => {
 
     it('handles payment failure gracefully', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-      mockDropInInstance.requestPaymentMethod.mockRejectedValue(new Error('Payment Failed'));
+      let rejectPayment;
+      mockDropInInstance.requestPaymentMethod.mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            rejectPayment = reject;
+          }),
+      );
 
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByRole('button', { name: /Make Payment/i }));
+
+      // Now reject the payment method request
+      await act(async () => {
+        rejectPayment(new Error('Payment Failed'));
+      });
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalled();
@@ -712,16 +755,27 @@ describe('CartPage – Unit Tests', () => {
 
     it('resets loading state on payment failure', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-      mockDropInInstance.requestPaymentMethod.mockRejectedValue(new Error('Fail'));
+      let rejectPayment;
+      mockDropInInstance.requestPaymentMethod.mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            rejectPayment = reject;
+          }),
+      );
 
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByRole('button', { name: /Make Payment/i }));
+
+      // Now reject the payment method request
+      await act(async () => {
+        rejectPayment(new Error('Fail'));
+      });
 
       await waitFor(() => {
         // After error, button should show "Make Payment" again (not "Processing")
@@ -733,16 +787,28 @@ describe('CartPage – Unit Tests', () => {
 
     it('handles API post failure gracefully', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      let resolveNonce;
+      mockDropInInstance.requestPaymentMethod.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveNonce = resolve;
+          }),
+      );
       axios.post.mockRejectedValue(new Error('Server Error'));
 
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByRole('button', { name: /Make Payment/i }));
+
+      // Resolve nonce so axios.post is called (which will reject)
+      await act(async () => {
+        resolveNonce({ nonce: 'test-nonce-123' });
+      });
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalled();
@@ -760,30 +826,30 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Empty cart states', () => {
-    it('guest with empty cart shows empty message', () => {
+    it('guest with empty cart shows empty message', async () => {
       mockAuth = { user: null, token: '' };
       mockCart = [];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/Your Cart Is Empty/)).toBeInTheDocument();
     });
 
-    it('logged-in user with empty cart shows empty message', () => {
+    it('logged-in user with empty cart shows empty message', async () => {
       mockAuth = loggedInUser;
       mockCart = [];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/Your Cart Is Empty/)).toBeInTheDocument();
     });
 
-    it('shows $0.00 total for empty cart', () => {
+    it('shows $0.00 total for empty cart', async () => {
       mockAuth = loggedInUser;
       mockCart = [];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/\$0\.00/)).toBeInTheDocument();
     });
 
-    it('does not render any product images for empty cart', () => {
+    it('does not render any product images for empty cart', async () => {
       mockCart = [];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.queryByRole('img')).not.toBeInTheDocument();
     });
   });
@@ -797,54 +863,54 @@ describe('CartPage – Unit Tests', () => {
       mockAuth = loggedInUser;
     });
 
-    it('handles cart with a single item correctly', () => {
+    it('handles cart with a single item correctly', async () => {
       mockCart = [makeProduct(1, { price: 100 })];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/\$100\.00/)).toBeInTheDocument();
       expect(screen.getAllByRole('button', { name: /Remove/i })).toHaveLength(1);
     });
 
-    it('handles very expensive items', () => {
+    it('handles very expensive items', async () => {
       mockCart = [makeProduct(1, { price: 999999.99 })];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/\$999,999\.99/)).toBeInTheDocument();
     });
 
-    it('handles item with very long description (truncated to 30 chars)', () => {
+    it('handles item with very long description (truncated to 30 chars)', async () => {
       const longDesc = 'A'.repeat(200);
       mockCart = [makeProduct(1, { description: longDesc })];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText('A'.repeat(30))).toBeInTheDocument();
     });
 
-    it('handles item with short description (< 30 chars)', () => {
+    it('handles item with short description (< 30 chars)', async () => {
       mockCart = [makeProduct(1, { description: 'Short' })];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText('Short')).toBeInTheDocument();
     });
 
     /**
      * FIXED: Optional chaining on description prevents crash.
      */
-    it('renders gracefully when item has no description', () => {
+    it('renders gracefully when item has no description', async () => {
       mockCart = [{ _id: 'x', name: 'No Desc', price: 10 }];
       // Should NOT throw
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText('No Desc')).toBeInTheDocument();
     });
 
-    it('correctly counts items in header text', () => {
+    it('correctly counts items in header text', async () => {
       mockCart = Array.from({ length: 5 }, (_, i) => makeProduct(i));
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/You Have 5 items in your cart/)).toBeInTheDocument();
     });
 
     /**
      * FIXED: Now correctly uses singular "item" for count of 1.
      */
-    it("uses singular 'item' for 1 item", () => {
+    it("uses singular 'item' for 1 item", async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(/You Have 1 item in your cart/)).toBeInTheDocument();
       // Should NOT say "items"
       expect(screen.queryByText(/You Have 1 items in your cart/)).not.toBeInTheDocument();
@@ -881,7 +947,7 @@ describe('CartPage – Integration Tests', () => {
         requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: 'checkout-nonce' }),
       };
 
-      renderCartPage();
+      await renderCartPage();
 
       // Verify items displayed
       expect(screen.getByText('Product 1')).toBeInTheDocument();
@@ -916,9 +982,9 @@ describe('CartPage – Integration Tests', () => {
   });
 
   describe('Remove all items flow', () => {
-    it('removes items one by one until cart is empty', () => {
+    it('removes items one by one until cart is empty', async () => {
       mockCart = [makeProduct(1), makeProduct(2)];
-      renderCartPage();
+      await renderCartPage();
 
       // Remove first item
       fireEvent.click(screen.getAllByRole('button', { name: /Remove/i })[0]);
@@ -931,10 +997,10 @@ describe('CartPage – Integration Tests', () => {
   });
 
   describe('Guest to login flow', () => {
-    it('redirects guest to login with cart return state', () => {
+    it('redirects guest to login with cart return state', async () => {
       mockAuth = { user: null, token: '' };
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       fireEvent.click(screen.getByRole('button', { name: /Plase Login to checkout/i }));
 
@@ -947,7 +1013,7 @@ describe('CartPage – Integration Tests', () => {
   describe('Token + DropIn lifecycle', () => {
     it('fetches token on mount and renders DropIn when all conditions met', async () => {
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalledWith('/api/v1/product/braintree/token');
@@ -964,7 +1030,7 @@ describe('CartPage – Integration Tests', () => {
       axios.get.mockRejectedValue(new Error('Token error'));
 
       mockCart = [makeProduct(1)];
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalled();
@@ -976,9 +1042,9 @@ describe('CartPage – Integration Tests', () => {
   });
 
   describe('Cart persistence contract', () => {
-    it('removeCartItem persists to localStorage synchronously', () => {
+    it('removeCartItem persists to localStorage synchronously', async () => {
       mockCart = [makeProduct(1), makeProduct(2)];
-      renderCartPage();
+      await renderCartPage();
 
       fireEvent.click(screen.getAllByRole('button', { name: /Remove/i })[0]);
 
@@ -998,7 +1064,7 @@ describe('CartPage – Integration Tests', () => {
         requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: 'sync-nonce' }),
       };
 
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Make Payment/i })).toBeInTheDocument();
@@ -1016,10 +1082,10 @@ describe('CartPage – Integration Tests', () => {
   });
 
   describe('Conditional rendering states', () => {
-    it('guest + empty cart: no DropIn, no Remove, shows empty + login', () => {
+    it('guest + empty cart: no DropIn, no Remove, shows empty + login', async () => {
       mockAuth = { user: null, token: '' };
       mockCart = [];
-      renderCartPage();
+      await renderCartPage();
 
       expect(screen.getByText(/Your Cart Is Empty/)).toBeInTheDocument();
       expect(screen.getByText('Hello Guest')).toBeInTheDocument();
@@ -1029,10 +1095,10 @@ describe('CartPage – Integration Tests', () => {
       // The "Plase Login" button is in the address section which is shown regardless
     });
 
-    it('logged in + empty cart: no DropIn, shows empty message', () => {
+    it('logged in + empty cart: no DropIn, shows empty message', async () => {
       mockAuth = loggedInUser;
       mockCart = [];
-      renderCartPage();
+      await renderCartPage();
 
       expect(screen.getByText(/Your Cart Is Empty/)).toBeInTheDocument();
       expect(screen.getByText(/Hello\s+Test User/)).toBeInTheDocument();
@@ -1046,7 +1112,7 @@ describe('CartPage – Integration Tests', () => {
         requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: 'nonce' }),
       };
 
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByTestId('braintree-dropin')).toBeInTheDocument();
@@ -1062,7 +1128,7 @@ describe('CartPage – Integration Tests', () => {
         requestPaymentMethod: jest.fn().mockResolvedValue({ nonce: 'nonce' }),
       };
 
-      renderCartPage();
+      await renderCartPage();
 
       await waitFor(() => {
         expect(screen.getByTestId('braintree-dropin')).toBeInTheDocument();
@@ -1077,9 +1143,9 @@ describe('CartPage – Integration Tests', () => {
       [0, 'Your Cart Is Empty'],
       [2, 'You Have 2 items in your cart'],
       [10, 'You Have 10 items in your cart'],
-    ])("with %i items displays: '%s'", (count, expected) => {
+    ])("with %i items displays: '%s'", async (count, expected) => {
       mockCart = Array.from({ length: count }, (_, i) => makeProduct(i));
-      renderCartPage();
+      await renderCartPage();
       expect(screen.getByText(new RegExp(expected))).toBeInTheDocument();
     });
   });
