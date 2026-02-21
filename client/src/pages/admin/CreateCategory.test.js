@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import { MemoryRouter } from 'react-router-dom';
 import axios from 'axios';
@@ -81,12 +81,21 @@ const sampleCategories = [
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-const renderPage = () =>
-  render(
-    <MemoryRouter>
-      <CreateCategory />
-    </MemoryRouter>,
-  );
+const renderPage = async () => {
+  let result;
+  await act(async () => {
+    result = render(
+      <MemoryRouter>
+        <CreateCategory />
+      </MemoryRouter>,
+    );
+  });
+  // Flush any remaining async state updates (e.g. getAllCategory)
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  return result;
+};
 
 /** Helper: setup the default GET mock returning sample categories. */
 const setupGetMock = (cats = sampleCategories) => {
@@ -109,7 +118,7 @@ describe('CreateCategory Admin Page', () => {
 
   describe('Initial rendering', () => {
     it('renders the Manage Category heading', async () => {
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: /Manage Category/i })).toBeInTheDocument();
@@ -117,7 +126,7 @@ describe('CreateCategory Admin Page', () => {
     });
 
     it('uses Layout with correct title', async () => {
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         const layout = screen.getByTestId('layout');
@@ -126,7 +135,7 @@ describe('CreateCategory Admin Page', () => {
     });
 
     it('renders AdminMenu', async () => {
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByTestId('admin-menu')).toBeInTheDocument();
@@ -134,7 +143,7 @@ describe('CreateCategory Admin Page', () => {
     });
 
     it('renders create-category form with input and submit button', async () => {
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText('Enter new category')).toBeInTheDocument();
@@ -145,7 +154,7 @@ describe('CreateCategory Admin Page', () => {
     });
 
     it('fetches and displays all categories on mount', async () => {
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         sampleCategories.forEach((c) => {
@@ -155,7 +164,7 @@ describe('CreateCategory Admin Page', () => {
     });
 
     it('renders Edit and Delete buttons for each category', async () => {
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getAllByRole('button', { name: /Edit/i })).toHaveLength(sampleCategories.length);
@@ -174,7 +183,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: true, message: 'new category created' },
       });
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -182,13 +191,21 @@ describe('CreateCategory Admin Page', () => {
 
       const input = screen.getByPlaceholderText('Enter new category');
       fireEvent.change(input, { target: { value: 'Furniture' } });
-      fireEvent.click(screen.getAllByRole('button', { name: /Submit/i })[0]);
+
+      await act(async () => {
+        fireEvent.click(screen.getAllByRole('button', { name: /Submit/i })[0]);
+      });
 
       await waitFor(() => {
         expect(axios.post).toHaveBeenCalledWith('/api/v1/category/create-category', { name: 'Furniture' });
       });
 
       expect(toast.success).toHaveBeenCalledWith('Furniture is created');
+
+      // Wait for re-fetch triggered by successful create to settle
+      await waitFor(() => {
+        expect(axios.get).toHaveBeenCalledTimes(2);
+      });
     });
 
     it('re-fetches categories after successful create', async () => {
@@ -196,7 +213,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: true, message: 'created' },
       });
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalledTimes(1);
@@ -217,7 +234,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: false, message: 'Already exists' },
       });
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -235,7 +252,7 @@ describe('CreateCategory Admin Page', () => {
     it('shows error toast when create request throws', async () => {
       axios.post.mockRejectedValue(new Error('Network error'));
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -257,7 +274,7 @@ describe('CreateCategory Admin Page', () => {
 
   describe('Update category', () => {
     it('opens modal with current name when Edit is clicked', async () => {
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -282,7 +299,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: true, message: 'updated' },
       });
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -304,13 +321,20 @@ describe('CreateCategory Admin Page', () => {
       // Submit the modal form
       const submitBtns = screen.getAllByRole('button', { name: /Submit/i });
       // The modal submit should be the second one
-      fireEvent.click(submitBtns[submitBtns.length - 1]);
+      await act(async () => {
+        fireEvent.click(submitBtns[submitBtns.length - 1]);
+      });
 
       await waitFor(() => {
         expect(axios.put).toHaveBeenCalledWith('/api/v1/category/update-category/c1', { name: 'Updated Name' });
       });
 
       expect(toast.success).toHaveBeenCalledWith('Updated Name is updated');
+
+      // Wait for re-fetch triggered by successful update to settle
+      await waitFor(() => {
+        expect(axios.get).toHaveBeenCalledTimes(2);
+      });
     });
 
     it('closes modal and re-fetches after successful update', async () => {
@@ -318,7 +342,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: true, message: 'updated' },
       });
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -350,7 +374,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: false, message: 'Update failed' },
       });
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -373,7 +397,7 @@ describe('CreateCategory Admin Page', () => {
     it('shows error toast when update request throws', async () => {
       axios.put.mockRejectedValue(new Error('Server error'));
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -394,7 +418,7 @@ describe('CreateCategory Admin Page', () => {
     });
 
     it('closes modal on cancel', async () => {
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -424,20 +448,27 @@ describe('CreateCategory Admin Page', () => {
         data: { success: true, message: 'deleted' },
       });
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
       });
 
       const deleteBtns = screen.getAllByRole('button', { name: /Delete/i });
-      fireEvent.click(deleteBtns[0]);
+      await act(async () => {
+        fireEvent.click(deleteBtns[0]);
+      });
 
       await waitFor(() => {
         expect(axios.delete).toHaveBeenCalledWith('/api/v1/category/delete-category/c1');
       });
 
       expect(toast.success).toHaveBeenCalledWith('category is deleted');
+
+      // Wait for re-fetch triggered by successful delete to settle
+      await waitFor(() => {
+        expect(axios.get).toHaveBeenCalledTimes(2);
+      });
     });
 
     it('re-fetches categories after successful delete', async () => {
@@ -445,7 +476,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: true, message: 'deleted' },
       });
 
-      renderPage();
+      await renderPage();
 
       // Wait for initial categories to load
       await waitFor(() => {
@@ -466,7 +497,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: false, message: 'Cannot delete' },
       });
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -482,7 +513,7 @@ describe('CreateCategory Admin Page', () => {
     it('shows error toast when delete request throws', async () => {
       axios.delete.mockRejectedValue(new Error('Network fail'));
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -504,7 +535,7 @@ describe('CreateCategory Admin Page', () => {
     it('shows error toast when fetching categories fails', async () => {
       axios.get.mockRejectedValue(new Error('Server error'));
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Something went wrong in getting category');
@@ -516,7 +547,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: false, message: 'No categories' },
       });
 
-      renderPage();
+      await renderPage();
 
       // getAllCategory only sets categories if data.success, so nothing should render
       await waitFor(() => {
@@ -535,7 +566,7 @@ describe('CreateCategory Admin Page', () => {
   describe('Edge cases', () => {
     it('renders empty table when there are no categories', async () => {
       setupGetMock([]);
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalled();
@@ -550,7 +581,7 @@ describe('CreateCategory Admin Page', () => {
         data: { success: true, message: 'updated' },
       });
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -591,7 +622,7 @@ describe('CreateCategory Admin Page', () => {
     it('categories.map now uses proper key on <tr>', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -606,7 +637,7 @@ describe('CreateCategory Admin Page', () => {
     });
 
     it('input is controlled (updates on change)', async () => {
-      renderPage();
+      await renderPage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -633,7 +664,7 @@ describe('CreateCategory – Integration Tests', () => {
 
   it('full CRUD flow: load → create → edit → delete', async () => {
     // 1. Load
-    renderPage();
+    await renderPage();
 
     await waitFor(() => {
       expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -651,7 +682,9 @@ describe('CreateCategory – Integration Tests', () => {
 
     const input = screen.getByPlaceholderText('Enter new category');
     fireEvent.change(input, { target: { value: 'Furniture' } });
-    fireEvent.click(screen.getAllByRole('button', { name: /Submit/i })[0]);
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: /Submit/i })[0]);
+    });
 
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Furniture is created');
@@ -692,7 +725,9 @@ describe('CreateCategory – Integration Tests', () => {
 
     // Submit the modal form (last Submit button is the modal's)
     const submitBtns = screen.getAllByRole('button', { name: /Submit/i });
-    fireEvent.click(submitBtns[submitBtns.length - 1]);
+    await act(async () => {
+      fireEvent.click(submitBtns[submitBtns.length - 1]);
+    });
 
     await waitFor(() => {
       expect(axios.put).toHaveBeenCalledWith('/api/v1/category/update-category/c2', { name: 'Novels' });
@@ -715,10 +750,17 @@ describe('CreateCategory – Integration Tests', () => {
     });
 
     const deleteBtns = screen.getAllByRole('button', { name: /Delete/i });
-    fireEvent.click(deleteBtns[deleteBtns.length - 1]);
+    await act(async () => {
+      fireEvent.click(deleteBtns[deleteBtns.length - 1]);
+    });
 
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('category is deleted');
+    });
+
+    // Wait for re-fetch triggered by successful delete to settle
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledTimes(4);
     });
   });
 });
