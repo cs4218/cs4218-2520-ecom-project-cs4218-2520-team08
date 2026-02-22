@@ -11,6 +11,7 @@ jest.mock("react-router-dom", () => ({
   useLocation: () => mockLocation,
 }));
 
+// Keagan Pang, A0258729L
 describe("Spinner", () => {
   beforeEach(() => {
     jest.clearAllMocks();

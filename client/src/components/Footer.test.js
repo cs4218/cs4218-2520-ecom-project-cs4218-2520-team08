@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom/extend-expect";
 import Footer from "./Footer";
 
+// Keagan Pang, A0258729L
 describe("Footer", () => {
   it("renders copyright text", () => {
     // Arrange

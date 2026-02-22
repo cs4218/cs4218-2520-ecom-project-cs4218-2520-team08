@@ -9,6 +9,7 @@ jest.mock("react-hot-toast", () => ({
   Toaster: () => <div data-testid="toaster-stub">Toaster</div>,
 }));
 
+// Keagan Pang, A0258729L
 describe("Layout", () => {
   it("renders children content", () => {
     // Arrange

@@ -6,6 +6,7 @@ jest.mock("mongoose", () => ({
   connect: jest.fn(),
 }));
 
+// Keagan Pang, A0258729L
 describe("connectDB", () => {
   let consoleLogSpy;
 

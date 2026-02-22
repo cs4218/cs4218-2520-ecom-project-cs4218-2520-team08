@@ -119,6 +119,7 @@ afterEach(() => {
   console.log.mockRestore?.();
 });
 
+// Keagan Pang, A0258729L
 describe("getProductController", () => {
   it("should return products on success", async () => {
     const mockProducts = [{ name: "A" }];
@@ -155,6 +156,7 @@ describe("getProductController", () => {
   });
 });
 
+// Keagan Pang, A0258729L
 describe("getSingleProductController", () => {
   it("should return single product on success", async () => {
     const mockProduct = { name: "A" };
@@ -190,6 +192,7 @@ describe("getSingleProductController", () => {
   });
 });
 
+// Keagan Pang, A0258729L
 describe("productPhotoController", () => {
   it("should send photo when data exists", async () => {
     const mockProduct = { photo: { data: Buffer.from("p"), contentType: "image/png" } };
@@ -251,6 +254,7 @@ describe("productPhotoController", () => {
   });
 });
 
+// Keagan Pang, A0258729L
 describe("productFiltersController", () => {
   it("should filter by category and price", async () => {
     const products = [{ name: "A" }];
@@ -320,6 +324,7 @@ describe("productFiltersController", () => {
   });
 });
 
+// Keagan Pang, A0258729L
 describe("productCountController", () => {
   it("should return total count on success", async () => {
     const query = { estimatedDocumentCount: jest.fn().mockResolvedValue(5) };
@@ -351,6 +356,7 @@ describe("productCountController", () => {
   });
 });
 
+// Keagan Pang, A0258729L
 describe("productListController", () => {
   it("should return products for specific page", async () => {
     const products = [{ name: "A" }];
@@ -393,6 +399,7 @@ describe("productListController", () => {
   });
 });
 
+// Keagan Pang, A0258729L
 describe("searchProductController", () => {
   it("should return search results on success", async () => {
     const results = [{ name: "A" }];
@@ -427,6 +434,7 @@ describe("searchProductController", () => {
   });
 });
 
+// Keagan Pang, A0258729L
 describe("realtedProductController", () => {
   it("should return related products on success", async () => {
     const products = [{ name: "A" }];
@@ -460,6 +468,7 @@ describe("realtedProductController", () => {
   });
 });
 
+// Keagan Pang, A0258729L
 describe("productCategoryController", () => {
   it("should return category products on success", async () => {
     const category = { _id: "c1" };

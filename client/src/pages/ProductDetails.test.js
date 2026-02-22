@@ -81,6 +81,7 @@ const renderWithRouter = (slug = "test-product") =>
     </MemoryRouter>
   );
 
+// Keagan Pang, A0258729L
 describe("ProductDetails", () => {
   let consoleErrorSpy;
 
