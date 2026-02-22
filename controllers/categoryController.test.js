@@ -1,4 +1,4 @@
-// Shivangi Kamat, A0319665R
+// Shivangi Kamat, A0319665R (all except the ones otherwise labeled)
 import {
   createCategoryController,
   updateCategoryController,
@@ -137,9 +137,6 @@ describe('categoryController', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 2. updateCategoryController
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('updateCategoryController', () => {
     it('updates category by ID and returns 200', async () => {
@@ -204,10 +201,6 @@ describe('categoryController', () => {
       consoleSpy.mockRestore();
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 3. categoryControlller (get all)
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('categoryControlller (get all)', () => {
     it('returns all categories with status 200', async () => {
@@ -330,10 +323,6 @@ describe('categoryController', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 5. deleteCategoryCOntroller
-  // ═══════════════════════════════════════════════════════════════════════════
-
   describe('deleteCategoryCOntroller', () => {
     it('deletes category by ID and returns 200', async () => {
       categoryModel.findByIdAndDelete.mockResolvedValue({
@@ -391,24 +380,3 @@ describe('categoryController', () => {
   });
 });
 
-/*
- * ═══════════════════════════════════════════════════════════════════════════
- * BUGS FIXED:
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * 1. TYPO `errro` IN createCategoryController CATCH BLOCK → fixed to `error`
- * 2. DUPLICATE CATEGORY RETURNS 200 + success:true → fixed to 409 + success:false
- * 3. TYPO `messsage` IN updateCategoryController → fixed to `message`
- * 4. TYPOS IN RESPONSE MESSAGES → all fixed
- *    - "Category Already Exisits" → "Category Already Exists"
- *    - "Categry Deleted Successfully" → "Category Deleted Successfully"
- *    - "Get SIngle Category SUccessfully" → "Get Single Category Successfully"
- *    - "Errro in Category" → "Error in Category"
- *
- * REMAINING CONCERNS (not fixed — would require broader refactoring):
- * - Function name typos: categoryControlller, deleteCategoryCOntroller
- *   (changing exports would break routes and other consumers)
- * - No validation in updateCategoryController for empty name
- * - singleCategoryController returns 200 for not-found slugs
- * - deleteCategoryCOntroller returns 200 for non-existent IDs
- */
