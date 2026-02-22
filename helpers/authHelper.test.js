@@ -1,3 +1,5 @@
+// Tsui Yi Wern, A0266070J
+
 import bcrypt from 'bcrypt';
 import { hashPassword, comparePassword } from './authHelper.js';
 

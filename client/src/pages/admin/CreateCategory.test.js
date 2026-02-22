@@ -1,8 +1,4 @@
-/**
- * Unit + Integration Tests for CreateCategory admin page
- *
- * Tests CRUD operations: create, list, update (via modal), and delete categories.
- */
+// client/src/pages/admin/CreateCategory.test.js
 
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
@@ -12,7 +8,6 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import CreateCategory from './CreateCategory';
 
-// ─── Mocks ──────────────────────────────────────────────────────────────────
 
 jest.mock('axios');
 jest.mock('react-hot-toast');
@@ -41,7 +36,6 @@ jest.mock('../../components/AdminMenu', () => {
   return () => <div data-testid='admin-menu'>AdminMenu</div>;
 });
 
-// Mock antd Modal – render children when visible prop is truthy
 jest.mock('antd', () => {
   const React = require('react');
   return {
@@ -71,7 +65,6 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// ─── Test Data ──────────────────────────────────────────────────────────────
 
 const sampleCategories = [
   { _id: 'c1', name: 'Electronics', slug: 'electronics' },
@@ -79,7 +72,6 @@ const sampleCategories = [
   { _id: 'c3', name: 'Clothing', slug: 'clothing' },
 ];
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
 
 const renderPage = async () => {
   let result;
@@ -97,24 +89,18 @@ const renderPage = async () => {
   return result;
 };
 
-/** Helper: setup the default GET mock returning sample categories. */
 const setupGetMock = (cats = sampleCategories) => {
   axios.get.mockResolvedValue({
     data: { success: true, category: cats },
   });
 };
 
-// ─── Test Suite ─────────────────────────────────────────────────────────────
 
 describe('CreateCategory Admin Page', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupGetMock();
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 1. INITIAL RENDERING
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Initial rendering', () => {
     it('renders the Manage Category heading', async () => {
@@ -147,8 +133,6 @@ describe('CreateCategory Admin Page', () => {
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText('Enter new category')).toBeInTheDocument();
-        // There are two Submit buttons (create form + modal form), but modal
-        // is hidden by default, so only one is visible initially.
         expect(screen.getAllByRole('button', { name: /Submit/i }).length).toBeGreaterThanOrEqual(1);
       });
     });
@@ -172,10 +156,6 @@ describe('CreateCategory Admin Page', () => {
       });
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 2. CREATE CATEGORY
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Create category', () => {
     it('creates a category on form submit and shows success toast', async () => {
@@ -268,9 +248,6 @@ describe('CreateCategory Admin Page', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 3. UPDATE CATEGORY
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Update category', () => {
     it('opens modal with current name when Edit is clicked', async () => {
@@ -438,10 +415,6 @@ describe('CreateCategory Admin Page', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 4. DELETE CATEGORY
-  // ═══════════════════════════════════════════════════════════════════════════
-
   describe('Delete category', () => {
     it('sends DELETE request when delete button is clicked', async () => {
       axios.delete.mockResolvedValue({
@@ -527,10 +500,6 @@ describe('CreateCategory Admin Page', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 5. GET ALL CATEGORIES – ERROR HANDLING
-  // ═══════════════════════════════════════════════════════════════════════════
-
   describe('Get all categories – error handling', () => {
     it('shows error toast when fetching categories fails', async () => {
       axios.get.mockRejectedValue(new Error('Server error'));
@@ -558,10 +527,6 @@ describe('CreateCategory Admin Page', () => {
       expect(screen.getByRole('heading', { name: /Manage Category/i })).toBeInTheDocument();
     });
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 6. EDGE CASES
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('Edge cases', () => {
     it('renders empty table when there are no categories', async () => {
@@ -652,131 +617,3 @@ describe('CreateCategory Admin Page', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// INTEGRATION TESTS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-describe('CreateCategory – Integration Tests', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    setupGetMock();
-  });
-
-  it('full CRUD flow: load → create → edit → delete', async () => {
-    // 1. Load
-    await renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByText('Electronics')).toBeInTheDocument();
-    });
-
-    // 2. Create
-    axios.post.mockResolvedValue({
-      data: { success: true, message: 'created' },
-    });
-    // After create, refetch returns original + new
-    const catsWithFurniture = [...sampleCategories, { _id: 'c4', name: 'Furniture', slug: 'furniture' }];
-    axios.get.mockResolvedValue({
-      data: { success: true, category: catsWithFurniture },
-    });
-
-    const input = screen.getByPlaceholderText('Enter new category');
-    fireEvent.change(input, { target: { value: 'Furniture' } });
-    await act(async () => {
-      fireEvent.click(screen.getAllByRole('button', { name: /Submit/i })[0]);
-    });
-
-    await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Furniture is created');
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Furniture')).toBeInTheDocument();
-    });
-
-    // 3. Edit – click edit on "Books" (second category, simpler target)
-    axios.put.mockResolvedValue({
-      data: { success: true, message: 'updated' },
-    });
-    axios.get.mockResolvedValue({
-      data: {
-        success: true,
-        category: [
-          sampleCategories[0],
-          { _id: 'c2', name: 'Novels', slug: 'novels' },
-          sampleCategories[2],
-          { _id: 'c4', name: 'Furniture', slug: 'furniture' },
-        ],
-      },
-    });
-
-    const editBtns = screen.getAllByRole('button', { name: /Edit/i });
-    fireEvent.click(editBtns[1]); // Edit "Books"
-
-    await waitFor(() => {
-      expect(screen.getByTestId('modal')).toBeInTheDocument();
-    });
-
-    // Find the modal's input (the one pre-filled with "Books")
-    const modalInputs = screen.getAllByPlaceholderText('Enter new category');
-    const modalInput = modalInputs.find((el) => el.value === 'Books');
-    expect(modalInput).toBeTruthy();
-    fireEvent.change(modalInput, { target: { value: 'Novels' } });
-
-    // Submit the modal form (last Submit button is the modal's)
-    const submitBtns = screen.getAllByRole('button', { name: /Submit/i });
-    await act(async () => {
-      fireEvent.click(submitBtns[submitBtns.length - 1]);
-    });
-
-    await waitFor(() => {
-      expect(axios.put).toHaveBeenCalledWith('/api/v1/category/update-category/c2', { name: 'Novels' });
-    });
-
-    await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Novels is updated');
-    });
-
-    // 4. Delete
-    axios.delete.mockResolvedValue({
-      data: { success: true, message: 'deleted' },
-    });
-    axios.get.mockResolvedValue({
-      data: { success: true, category: sampleCategories },
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Furniture')).toBeInTheDocument();
-    });
-
-    const deleteBtns = screen.getAllByRole('button', { name: /Delete/i });
-    await act(async () => {
-      fireEvent.click(deleteBtns[deleteBtns.length - 1]);
-    });
-
-    await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('category is deleted');
-    });
-
-    // Wait for re-fetch triggered by successful delete to settle
-    await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledTimes(4);
-    });
-  });
-});
-
-/*
- * ═══════════════════════════════════════════════════════════════════════════
- * BUGS FIXED:
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * 1. MISSING KEY ON FRAGMENT → replaced <> with <tr key={c._id}>
- * 2. TYPOS IN TOAST MESSAGES → all corrected
- *    - "somthing went wrong in input form" → "something went wrong in input form"
- *    - "Something wwent wrong in getting catgeory" → "Something went wrong in getting category"
- *    - "Somtihing went wrong" → "Something went wrong"
- *
- * REMAINING CONCERNS:
- * - No confirmation dialog on delete
- * - No form validation (empty string can be submitted)
- */

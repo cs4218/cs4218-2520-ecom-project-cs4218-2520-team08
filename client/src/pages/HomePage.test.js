@@ -190,6 +190,7 @@ const renderHomePage = async () => {
 
 // ─── Test Suite ─────────────────────────────────────────────────────────────
 
+// Lee Seng Kitt, A0252087A// Lee Seng Kitt, A0252087A
 describe('HomePage – Unit Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -208,7 +209,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. INITIAL RENDERING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  //// Lee Seng Kitt, A0252087A Lee Seng Kitt, A0252087A
   describe('Initial Rendering', () => {
     it('renders the banner image', async () => {
       setupDefaultAxiosMocks();
@@ -255,7 +256,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 2. API CALLS ON MOUNT
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('API calls on mount', () => {
     it('fetches categories on mount', async () => {
       setupDefaultAxiosMocks();
@@ -295,7 +296,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 3. PRODUCT RENDERING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Product cards rendering', () => {
     it('renders all product names', async () => {
       setupDefaultAxiosMocks();
@@ -365,7 +366,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 4. CATEGORY FILTERS
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Category filter checkboxes', () => {
     it('renders a checkbox for each category', async () => {
       setupDefaultAxiosMocks();
@@ -450,7 +451,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 5. PRICE FILTERS
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Price filter radio buttons', () => {
     it('renders all price range options from Prices constant', async () => {
       setupDefaultAxiosMocks();
@@ -487,7 +488,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 6. RESET FILTERS
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Reset Filters button', () => {
     it('calls window.location.reload when RESET FILTERS is clicked', async () => {
       setupDefaultAxiosMocks();
@@ -511,7 +512,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 7. NAVIGATION – "More Details"
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('More Details navigation', () => {
     it("navigates to /product/:slug when 'More Details' is clicked", async () => {
       setupDefaultAxiosMocks();
@@ -531,7 +532,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 8. ADD TO CART
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('ADD TO CART functionality', () => {
     it('adds product to cart, updates localStorage, and shows toast', async () => {
       setupDefaultAxiosMocks();
@@ -578,7 +579,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 9. PAGINATION / LOAD MORE
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Pagination – Load More', () => {
     it("shows 'Loadmore' button when products < total", async () => {
       setupDefaultAxiosMocks({
@@ -675,7 +676,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 10. EMPTY DATA STATES
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Empty data states', () => {
     it('renders no product cards when product list is empty', async () => {
       setupDefaultAxiosMocks({
@@ -725,7 +726,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 11. API FAILURE HANDLING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('API failure handling', () => {
     let consoleSpy;
 
@@ -882,7 +883,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 12. MALFORMED / INVALID RESPONSE HANDLING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Malformed / unexpected API responses', () => {
     let consoleSpy;
 
@@ -950,7 +951,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 13. LOADING STATE
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Loading state', () => {
     it("shows 'Loading ...' text in Loadmore button while fetching", async () => {
       // Make loadMore take time so we can observe loading state
@@ -1007,7 +1008,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 14. Prices CONSTANT
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Prices constant', () => {
     it('has 6 price ranges defined', async () => {
       expect(Prices).toHaveLength(6);
@@ -1038,7 +1039,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 15. FILTER INTERACTION BETWEEN CATEGORY AND PRICE
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Combined category + price filter', () => {
     it('sends both checked and radio when both filters are active', async () => {
       setupDefaultAxiosMocks();
@@ -1066,7 +1067,7 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 16. CONDITIONAL RENDERING — getAllProducts vs filterProduct
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Conditional fetching logic', () => {
     it('calls only filterProduct (not getAllProducts) when only category is selected', async () => {
       setupDefaultAxiosMocks();
@@ -1096,7 +1097,7 @@ describe('HomePage – Unit Tests', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // INTEGRATION TESTS — HomePage interacting with backend API patterns
 // ═══════════════════════════════════════════════════════════════════════════════
-
+// Lee Seng Kitt, A0252087A
 describe('HomePage – Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -1110,7 +1111,7 @@ describe('HomePage – Integration Tests', () => {
       writable: true,
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Full page load flow', () => {
     it('loads categories, product count, and products in parallel on mount', async () => {
       setupDefaultAxiosMocks();
@@ -1138,7 +1139,7 @@ describe('HomePage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Category filter → product list update flow', () => {
     it('replaces product list with filtered results when filter is applied', async () => {
       const filteredProducts = [makeProduct(10, { name: 'Filtered Item' })];
@@ -1193,7 +1194,7 @@ describe('HomePage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Pagination flow with backend', () => {
     it('calls product-list endpoint with incrementing page numbers', async () => {
       setupDefaultAxiosMocks({
@@ -1243,7 +1244,7 @@ describe('HomePage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Cart interaction with product data', () => {
     it('stores full product object in cart via context and localStorage', async () => {
       setupDefaultAxiosMocks();
@@ -1288,7 +1289,7 @@ describe('HomePage – Integration Tests', () => {
       expect(toast.success).toHaveBeenCalledTimes(2);
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Navigation integration', () => {
     it('navigates to correct product detail page for each product', async () => {
       setupDefaultAxiosMocks();
@@ -1306,7 +1307,7 @@ describe('HomePage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Filter API contract validation', () => {
     it('sends correct POST body format to product-filters', async () => {
       setupDefaultAxiosMocks();
@@ -1330,7 +1331,7 @@ describe('HomePage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Edge case: product with very short description', () => {
     it('handles description shorter than 60 chars with substring', async () => {
       const shortDescProduct = makeProduct(50, {
@@ -1349,7 +1350,7 @@ describe('HomePage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Edge case: product with price 0', () => {
     it('renders $0.00 for free products', async () => {
       const freeProduct = makeProduct(60, {
@@ -1369,7 +1370,7 @@ describe('HomePage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Edge case: very large product count', () => {
     it('shows Loadmore even with very large total', async () => {
       setupDefaultAxiosMocks({

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Product from "./productModel.js";
 
+// Keagan Pang, A0258729L
 describe("Product Model", () => {
   // Schema Definition Tests
   describe("Schema Definition", () => {

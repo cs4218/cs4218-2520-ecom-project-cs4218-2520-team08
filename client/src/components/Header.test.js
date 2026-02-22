@@ -52,6 +52,7 @@ const renderHeader = () =>
     </MemoryRouter>
   );
 
+// Keagan Pang, A0258729L
 describe("Header", () => {
   beforeEach(() => {
     jest.clearAllMocks();

@@ -1,3 +1,4 @@
+// Yeo Zi Yi, A0266292X
 import React from "react";
 import { render } from "@testing-library/react";
 import Search from "./Search";
@@ -23,6 +24,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+// Yeo Zi Yi, A0266292X
 describe("Search page", () => {
   it('sets the Layout title to "Search results"', () => {
     // Arrange

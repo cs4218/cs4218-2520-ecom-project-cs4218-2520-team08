@@ -1,3 +1,4 @@
+// Yeo Zi Yi, A0266292X
 import React from "react";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import axios from "axios";
@@ -22,6 +23,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+// Yeo Zi Yi, A0266292X
 describe("SearchInput component", () => {
   it("updates keyword in search context when input changes", () => {
     // Arrange

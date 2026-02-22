@@ -1,3 +1,5 @@
+// Tsui Yi Wern, A0266070J
+
 export const containsXSS = (value) => {
   const xssPatterns = [
     /<script\b/gi,
