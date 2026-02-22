@@ -66,13 +66,15 @@
 ### Lee Seng Kitt
 
 - `controllers/categoryController.js`
-  - `createCategoryController`
-  - `updateCategoryController`
-  - `categoryController`
-  - `singleCategoryController`
-  - `deleteCategoryController`
+  - `categoryController.js`
+  - `singleCategoryController.js`
+- `controllers/productController.js`
+  - `braintreeTokenController.js`
+  - `brainTreePaymentController.js`
+- `models/categoryModel.js`
 - `pages/Categories.js`
-- `pages/CategoryProduct.js`
+- `pages/HomePage.js`
+- `pages/CartPage.js`
 
 ### Kamat Shivangi Prashant (A0319665R)
 
