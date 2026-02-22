@@ -3,7 +3,7 @@
 [![Unit Tests (Jest)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/unit-tests.yaml/badge.svg?branch=main)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/unit-tests.yaml)
 
 ## Milestone 1 CI Run
-[Milestone 1 CI Run (Change this before submitting!)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/runs)
+[Milestone 1 CI Run](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/runs/22273923893/)
 
 ## Workload Distribution
 
