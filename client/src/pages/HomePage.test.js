@@ -173,15 +173,20 @@ const setupDefaultAxiosMocks = (overrides = {}) => {
   });
 };
 
-const renderHomePage = () =>
-  render(
-    <MemoryRouter initialEntries={['/']}>
-      <Routes>
-        <Route path='/' element={<HomePage />} />
-        <Route path='/product/:slug' element={<div>Product Detail</div>} />
-      </Routes>
-    </MemoryRouter>,
-  );
+const renderHomePage = async () => {
+  let result;
+  await act(async () => {
+    result = render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path='/' element={<HomePage />} />
+          <Route path='/product/:slug' element={<div>Product Detail</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  });
+  return result;
+};
 
 // ─── Test Suite ─────────────────────────────────────────────────────────────
 
@@ -208,7 +213,7 @@ describe('HomePage – Unit Tests', () => {
   describe('Initial Rendering', () => {
     it('renders the banner image', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       const banner = screen.getByAltText('bannerimage');
       expect(banner).toBeInTheDocument();
       expect(banner).toHaveAttribute('src', '/images/Virtual.png');
@@ -216,7 +221,7 @@ describe('HomePage – Unit Tests', () => {
 
     it("renders 'All Products' heading", async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         expect(screen.getByText('All Products')).toBeInTheDocument();
       });
@@ -224,25 +229,25 @@ describe('HomePage – Unit Tests', () => {
 
     it("renders 'Filter By Category' heading", async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       expect(screen.getByText('Filter By Category')).toBeInTheDocument();
     });
 
     it("renders 'Filter By Price' heading", async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       expect(screen.getByText('Filter By Price')).toBeInTheDocument();
     });
 
     it("renders 'RESET FILTERS' button", async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       expect(screen.getByRole('button', { name: /reset filters/i })).toBeInTheDocument();
     });
 
     it('passes correct title to Layout', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       const layout = screen.getByTestId('layout');
       expect(layout).toHaveAttribute('data-title', 'ALL Products - Best offers ');
     });
@@ -255,7 +260,7 @@ describe('HomePage – Unit Tests', () => {
   describe('API calls on mount', () => {
     it('fetches categories on mount', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalledWith('/api/v1/category/get-category');
       });
@@ -263,7 +268,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('fetches product count on mount', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalledWith('/api/v1/product/product-count');
       });
@@ -271,7 +276,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('fetches product list page 1 on mount', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalledWith('/api/v1/product/product-list/1');
       });
@@ -279,7 +284,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('does NOT call loadMore on initial page=1', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         // product-list should be called only once (from getAllProducts, not loadMore)
         const productListCalls = axios.get.mock.calls.filter((c) => c[0].startsWith('/api/v1/product/product-list/'));
@@ -295,7 +300,7 @@ describe('HomePage – Unit Tests', () => {
   describe('Product cards rendering', () => {
     it('renders all product names', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         sampleProducts.forEach((p) => {
           expect(screen.getByText(p.name)).toBeInTheDocument();
@@ -305,7 +310,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('renders product prices formatted as USD currency', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         sampleProducts.forEach((p) => {
           const formatted = p.price.toLocaleString('en-US', {
@@ -319,7 +324,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('renders truncated product descriptions (60 chars + ...)', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         sampleProducts.forEach((p) => {
           const truncated = `${p.description.substring(0, 60)}...`;
@@ -330,7 +335,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('renders product images with correct src', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         sampleProducts.forEach((p) => {
           const img = screen.getByAltText(p.name);
@@ -341,7 +346,7 @@ describe('HomePage – Unit Tests', () => {
 
     it("renders 'More Details' button for each product", async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         const btns = screen.getAllByText('More Details');
         expect(btns).toHaveLength(sampleProducts.length);
@@ -350,7 +355,7 @@ describe('HomePage – Unit Tests', () => {
 
     it("renders 'ADD TO CART' button for each product", async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         const btns = screen.getAllByText('ADD TO CART');
         expect(btns).toHaveLength(sampleProducts.length);
@@ -365,7 +370,7 @@ describe('HomePage – Unit Tests', () => {
   describe('Category filter checkboxes', () => {
     it('renders a checkbox for each category', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         sampleCategories.forEach((c) => {
           expect(screen.getByText(c.name)).toBeInTheDocument();
@@ -375,7 +380,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('calls filter API when a category checkbox is checked', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -397,7 +402,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('removes category from filter when unchecked', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -423,7 +428,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('supports selecting multiple categories', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -450,7 +455,7 @@ describe('HomePage – Unit Tests', () => {
   describe('Price filter radio buttons', () => {
     it('renders all price range options from Prices constant', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
       await waitFor(() => {
         Prices.forEach((p) => {
           expect(screen.getByText(p.name)).toBeInTheDocument();
@@ -460,7 +465,7 @@ describe('HomePage – Unit Tests', () => {
 
     it('calls filter API when a price radio is selected', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('$0 to 19')).toBeInTheDocument();
@@ -495,7 +500,7 @@ describe('HomePage – Unit Tests', () => {
         value: { ...window.location, reload: reloadMock },
       });
 
-      renderHomePage();
+      await renderHomePage();
 
       const resetBtn = screen.getByRole('button', { name: /reset filters/i });
       fireEvent.click(resetBtn);
@@ -511,7 +516,7 @@ describe('HomePage – Unit Tests', () => {
   describe('More Details navigation', () => {
     it("navigates to /product/:slug when 'More Details' is clicked", async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getAllByText('More Details').length).toBeGreaterThan(0);
@@ -531,7 +536,7 @@ describe('HomePage – Unit Tests', () => {
   describe('ADD TO CART functionality', () => {
     it('adds product to cart, updates localStorage, and shows toast', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getAllByText('ADD TO CART').length).toBeGreaterThan(0);
@@ -555,7 +560,7 @@ describe('HomePage – Unit Tests', () => {
       mockCart = [existingItem];
 
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getAllByText('ADD TO CART').length).toBeGreaterThan(0);
@@ -581,7 +586,7 @@ describe('HomePage – Unit Tests', () => {
         productCount: { data: { success: true, total: 10 } },
         productList: { data: { success: true, products: sampleProducts } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText(/Loadmore/i)).toBeInTheDocument();
@@ -593,7 +598,7 @@ describe('HomePage – Unit Tests', () => {
         productCount: { data: { success: true, total: 3 } },
         productList: { data: { success: true, products: sampleProducts } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('All Products')).toBeInTheDocument();
@@ -608,7 +613,7 @@ describe('HomePage – Unit Tests', () => {
         productList: { data: { success: true, products: sampleProducts } },
         productListPage2: { data: { success: true, products: page2Products } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText(/Loadmore/i)).toBeInTheDocument();
@@ -627,7 +632,7 @@ describe('HomePage – Unit Tests', () => {
         productList: { data: { success: true, products: sampleProducts } },
         productListPage2: { data: { success: true, products: page2Products } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Product 1')).toBeInTheDocument();
@@ -651,7 +656,7 @@ describe('HomePage – Unit Tests', () => {
         productList: { data: { success: true, products: sampleProducts } },
         productListPage2: { data: { success: true, products: page2Products } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText(/Loadmore/i)).toBeInTheDocument();
@@ -678,7 +683,7 @@ describe('HomePage – Unit Tests', () => {
         productList: { data: { success: true, products: [] } },
         productCount: { data: { success: true, total: 0 } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('All Products')).toBeInTheDocument();
@@ -692,7 +697,7 @@ describe('HomePage – Unit Tests', () => {
       setupDefaultAxiosMocks({
         categories: { data: { success: true, category: [] } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Filter By Category')).toBeInTheDocument();
@@ -708,7 +713,7 @@ describe('HomePage – Unit Tests', () => {
         productList: { data: { success: true, products: [] } },
         productCount: { data: { success: true, total: 0 } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('All Products')).toBeInTheDocument();
@@ -750,7 +755,7 @@ describe('HomePage – Unit Tests', () => {
         return Promise.resolve({ data: {} });
       });
 
-      renderHomePage();
+      await renderHomePage();
 
       // Page should still render without crashing
       await waitFor(() => {
@@ -775,7 +780,7 @@ describe('HomePage – Unit Tests', () => {
         return Promise.resolve({ data: {} });
       });
 
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('All Products')).toBeInTheDocument();
@@ -804,7 +809,7 @@ describe('HomePage – Unit Tests', () => {
         return Promise.resolve({ data: {} });
       });
 
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Product 1')).toBeInTheDocument();
@@ -819,7 +824,7 @@ describe('HomePage – Unit Tests', () => {
       setupDefaultAxiosMocks();
       axios.post.mockRejectedValue(new Error('Filter Error'));
 
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -858,7 +863,7 @@ describe('HomePage – Unit Tests', () => {
         return Promise.resolve({ data: {} });
       });
 
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText(/Loadmore/i)).toBeInTheDocument();
@@ -894,7 +899,7 @@ describe('HomePage – Unit Tests', () => {
       setupDefaultAxiosMocks({
         categories: { data: { success: false, category: null } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Filter By Category')).toBeInTheDocument();
@@ -909,7 +914,7 @@ describe('HomePage – Unit Tests', () => {
       setupDefaultAxiosMocks({
         productList: { data: { success: true } }, // no `products` key
       });
-      renderHomePage();
+      await renderHomePage();
 
       // Should not crash
       await waitFor(() => {
@@ -921,7 +926,7 @@ describe('HomePage – Unit Tests', () => {
       setupDefaultAxiosMocks({
         categories: { data: { success: true, category: null } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('All Products')).toBeInTheDocument();
@@ -932,7 +937,7 @@ describe('HomePage – Unit Tests', () => {
       setupDefaultAxiosMocks({
         productCount: { data: { success: true } }, // no `total` key
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('All Products')).toBeInTheDocument();
@@ -975,7 +980,7 @@ describe('HomePage – Unit Tests', () => {
         return Promise.resolve({ data: {} });
       });
 
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText(/Loadmore/i)).toBeInTheDocument();
@@ -1005,11 +1010,11 @@ describe('HomePage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // Lee Seng Kitt, A0252087A
   describe('Prices constant', () => {
-    it('has 6 price ranges defined', () => {
+    it('has 6 price ranges defined', async () => {
       expect(Prices).toHaveLength(6);
     });
 
-    it('each price range has required fields', () => {
+    it('each price range has required fields', async () => {
       Prices.forEach((p) => {
         expect(p).toHaveProperty('_id');
         expect(p).toHaveProperty('name');
@@ -1019,13 +1024,13 @@ describe('HomePage – Unit Tests', () => {
       });
     });
 
-    it('has unique _id values for all price ranges', () => {
+    it('has unique _id values for all price ranges', async () => {
       const ids = Prices.map((p) => p._id);
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
     });
 
-    it('covers price ranges from $0 to $9999', () => {
+    it('covers price ranges from $0 to $9999', async () => {
       expect(Prices[0].array[0]).toBe(0);
       expect(Prices[Prices.length - 1].array[1]).toBe(9999);
     });
@@ -1038,7 +1043,7 @@ describe('HomePage – Unit Tests', () => {
   describe('Combined category + price filter', () => {
     it('sends both checked and radio when both filters are active', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -1066,7 +1071,7 @@ describe('HomePage – Unit Tests', () => {
   describe('Conditional fetching logic', () => {
     it('calls only filterProduct (not getAllProducts) when only category is selected', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -1110,7 +1115,7 @@ describe('HomePage – Integration Tests', () => {
   describe('Full page load flow', () => {
     it('loads categories, product count, and products in parallel on mount', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         // All three initial API calls made
@@ -1144,7 +1149,7 @@ describe('HomePage – Integration Tests', () => {
           data: { success: true, products: filteredProducts },
         },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Product 1')).toBeInTheDocument();
@@ -1165,7 +1170,7 @@ describe('HomePage – Integration Tests', () => {
           data: { success: true, products: filteredProducts },
         },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Product 1')).toBeInTheDocument();
@@ -1197,7 +1202,7 @@ describe('HomePage – Integration Tests', () => {
         productList: { data: { success: true, products: sampleProducts } },
         productListPage2: { data: { success: true, products: page2Products } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText(/Loadmore/i)).toBeInTheDocument();
@@ -1220,7 +1225,7 @@ describe('HomePage – Integration Tests', () => {
           data: { success: true, products: moreProducts },
         },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Product 1')).toBeInTheDocument();
@@ -1243,7 +1248,7 @@ describe('HomePage – Integration Tests', () => {
   describe('Cart interaction with product data', () => {
     it('stores full product object in cart via context and localStorage', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getAllByText('ADD TO CART').length).toBeGreaterThan(0);
@@ -1263,7 +1268,7 @@ describe('HomePage – Integration Tests', () => {
 
     it('can add multiple different products to cart sequentially', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getAllByText('ADD TO CART').length).toBeGreaterThan(0);
@@ -1288,7 +1293,7 @@ describe('HomePage – Integration Tests', () => {
   describe('Navigation integration', () => {
     it('navigates to correct product detail page for each product', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getAllByText('More Details').length).toBe(sampleProducts.length);
@@ -1306,7 +1311,7 @@ describe('HomePage – Integration Tests', () => {
   describe('Filter API contract validation', () => {
     it('sends correct POST body format to product-filters', async () => {
       setupDefaultAxiosMocks();
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
@@ -1338,7 +1343,7 @@ describe('HomePage – Integration Tests', () => {
           data: { success: true, products: [shortDescProduct] },
         },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Short...')).toBeInTheDocument();
@@ -1357,7 +1362,7 @@ describe('HomePage – Integration Tests', () => {
           data: { success: true, products: [freeProduct] },
         },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText('Free Item')).toBeInTheDocument();
@@ -1371,7 +1376,7 @@ describe('HomePage – Integration Tests', () => {
       setupDefaultAxiosMocks({
         productCount: { data: { success: true, total: 100000 } },
       });
-      renderHomePage();
+      await renderHomePage();
 
       await waitFor(() => {
         expect(screen.getByText(/Loadmore/i)).toBeInTheDocument();
