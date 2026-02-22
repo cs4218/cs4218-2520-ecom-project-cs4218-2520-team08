@@ -66,11 +66,11 @@
 ### Lee Seng Kitt
 
 - `controllers/categoryController.js`
-  - `categoryController.js`
-  - `singleCategoryController.js`
+  - `categoryController`
+  - `singleCategoryController`
 - `controllers/productController.js`
-  - `braintreeTokenController.js`
-  - `brainTreePaymentController.js`
+  - `braintreeTokenController`
+  - `brainTreePaymentController`
 - `models/categoryModel.js`
 - `pages/Categories.js`
 - `pages/HomePage.js`
