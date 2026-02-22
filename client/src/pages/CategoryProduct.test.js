@@ -1,69 +1,40 @@
-/**
- * Unit + Integration Tests for CategoryProduct page
- *
- * Tests the page that shows products for a specific category,
- * fetched by slug from /api/v1/product/product-category/:slug.
- *
- * BUGS FIXED (documented here for reference):
- * ─────────────────────────────────────────────
- * 1. CRASH ON MISSING DESCRIPTION → added null guard: (p.description || "")
- * 2. CRASH ON MISSING PRICE → added null guard: (p.price || 0)
- * 3. SINGULAR/PLURAL "result found" → now pluralizes for counts !== 1
- * 4. category INITIALIZED AS ARRAY [] → should be {} (object)
- * 5. TYPO IN FUNCTION NAME → getPrductsByCat → getProductsByCat
- *
- * REMAINING KNOWN ISSUES:
- * ─────────────────────────────────────────────
- * - No server-side price validation (client-supplied prices trusted)
- * - No dedup/cancellation on rapid slug changes
- */
+import React from "react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom/extend-expect";
+import { MemoryRouter, Routes, Route, Link } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
+import CategoryProduct from "./CategoryProduct";
 
-import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import CategoryProduct from './CategoryProduct';
-
-// ─── Mocks ──────────────────────────────────────────────────────────────────
-
-jest.mock('axios');
-jest.mock('react-hot-toast');
-
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => {
-  const original = jest.requireActual('react-router-dom');
-  return {
-    ...original,
-    useNavigate: () => mockNavigate,
-  };
-});
-
-jest.mock('../context/auth', () => ({
-  useAuth: jest.fn(() => [{ user: null, token: '' }, jest.fn()]),
+var mockNavigate = jest.fn();
+jest.mock("axios");
+jest.mock("react-hot-toast");
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockNavigate,
 }));
 
 const mockSetCart = jest.fn();
-jest.mock('../context/cart', () => ({
+jest.mock("../context/auth", () => ({
+  useAuth: jest.fn(() => [{ user: null, token: "" }, jest.fn()]),
+}));
+jest.mock("../context/cart", () => ({
   useCart: jest.fn(() => [[], mockSetCart]),
 }));
-
-jest.mock('../context/search', () => ({
-  useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]),
+jest.mock("../context/search", () => ({
+  useSearch: jest.fn(() => [{ keyword: "" }, jest.fn()]),
 }));
 
-jest.mock('../components/Layout', () => {
+jest.mock("../components/Layout", () => {
   return ({ children, title }) => (
-    <div data-testid='layout' data-title={title}>
+    <div data-testid="layout" data-title={title}>
       {children}
     </div>
   );
 });
+jest.mock("../styles/CategoryProductStyles.css", () => ({}));
 
-jest.mock('../styles/CategoryProductStyles.css', () => ({}));
-
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: jest.fn().mockImplementation((query) => ({
     matches: false,
@@ -77,7 +48,7 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(window, "localStorage", {
   value: {
     setItem: jest.fn(),
     getItem: jest.fn(),
@@ -86,39 +57,32 @@ Object.defineProperty(window, 'localStorage', {
   writable: true,
 });
 
-// ─── Test Data ──────────────────────────────────────────────────────────────
-
 const makeProduct = (id, overrides = {}) => ({
   _id: `prod${id}`,
   name: `Product ${id}`,
   slug: `product-${id}`,
   description: `A description for product ${id} that is long enough to be truncated at sixty chars`,
   price: 29.99 + id,
-  category: 'cat1',
+  category: "cat1",
   ...overrides,
 });
 
-const sampleCategory = { _id: 'cat1', name: 'Electronics', slug: 'electronics' };
+const sampleCategory = { _id: "cat1", name: "Electronics", slug: "electronics" };
 const sampleProducts = [makeProduct(1), makeProduct(2), makeProduct(3)];
-
-// 8 products to test pagination (> 6)
 const manyProducts = Array.from({ length: 8 }, (_, i) => makeProduct(i + 1));
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-const renderCategoryProduct = (slug = 'electronics') =>
+const renderCategoryProduct = (slug = "electronics") =>
   render(
     <MemoryRouter initialEntries={[`/category/${slug}`]}>
       <Routes>
-        <Route path='/category/:slug' element={<CategoryProduct />} />
-        <Route path='/product/:slug' element={<div>Product Detail</div>} />
+        <Route path="/category/:slug" element={<CategoryProduct />} />
+        <Route path="/product/:slug" element={<div>Product Detail</div>} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 
-// ─── Test Suite ─────────────────────────────────────────────────────────────
-
-describe('CategoryProduct – Unit Tests', () => {
+// Keagan Pang, A0258729L
+describe("CategoryProduct", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     axios.get.mockResolvedValue({
@@ -130,20 +94,16 @@ describe('CategoryProduct – Unit Tests', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 1. DATA FETCHING
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('Data fetching', () => {
-    it('fetches products by category slug on mount', async () => {
-      renderCategoryProduct('electronics');
+  describe("Data fetching", () => {
+    it("fetches products by category slug on mount", async () => {
+      renderCategoryProduct("electronics");
 
       await waitFor(() => {
-        expect(axios.get).toHaveBeenCalledWith('/api/v1/product/product-category/electronics');
+        expect(axios.get).toHaveBeenCalledWith("/api/v1/product/product-category/electronics");
       });
     });
 
-    it('fetches only once on mount', async () => {
+    it("fetches only once on mount", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
@@ -151,25 +111,21 @@ describe('CategoryProduct – Unit Tests', () => {
       });
     });
 
-    it('does not fetch when slug is undefined', () => {
+    it("does not fetch when slug is undefined", () => {
       render(
-        <MemoryRouter initialEntries={['/category/']}>
+        <MemoryRouter initialEntries={["/category/"]}>
           <Routes>
-            <Route path='/category/' element={<CategoryProduct />} />
+            <Route path="/category/" element={<CategoryProduct />} />
           </Routes>
-        </MemoryRouter>,
+        </MemoryRouter>
       );
 
       expect(axios.get).not.toHaveBeenCalled();
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 2. RENDERING
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('Rendering', () => {
-    it('displays category name in heading', async () => {
+  describe("Rendering", () => {
+    it("displays category name in heading", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
@@ -177,7 +133,7 @@ describe('CategoryProduct – Unit Tests', () => {
       });
     });
 
-    it('displays correct result count with plural "results"', async () => {
+    it("displays correct result count with plural results", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
@@ -185,7 +141,7 @@ describe('CategoryProduct – Unit Tests', () => {
       });
     });
 
-    it('renders all product cards', async () => {
+    it("renders all product cards", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
@@ -195,12 +151,12 @@ describe('CategoryProduct – Unit Tests', () => {
       });
     });
 
-    it('renders product images with correct src and alt', async () => {
+    it("renders product images with correct src and alt", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        const img = screen.getByAltText('Product 1');
-        expect(img).toHaveAttribute('src', '/api/v1/product/product-photo/prod1');
+        const img = screen.getByAltText("Product 1");
+        expect(img).toHaveAttribute("src", "/api/v1/product/product-photo/prod1");
       });
     });
 
@@ -213,104 +169,91 @@ describe('CategoryProduct – Unit Tests', () => {
       });
     });
 
-    it('renders formatted prices in USD', async () => {
+    it("renders formatted prices in USD", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        // makeProduct(1) → 29.99 + 1 = $30.99
-        expect(screen.getByText('$30.99')).toBeInTheDocument();
+        expect(screen.getByText("$30.99")).toBeInTheDocument();
       });
     });
 
-    it("renders 'More Details' and 'ADD TO CART' buttons for each product", async () => {
+    it("renders More Details and ADD TO CART buttons for each product", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getAllByRole('button', { name: /More Details/i })).toHaveLength(sampleProducts.length);
-        expect(screen.getAllByRole('button', { name: /ADD TO CART/i })).toHaveLength(sampleProducts.length);
+        expect(screen.getAllByRole("button", { name: /More Details/i })).toHaveLength(sampleProducts.length);
+        expect(screen.getAllByRole("button", { name: /ADD TO CART/i })).toHaveLength(sampleProducts.length);
       });
     });
 
-    it("shows 'Category - ' before data loads (heading visible immediately)", () => {
-      axios.get.mockReturnValue(new Promise(() => {})); // never resolves
+    it("shows Category - before data loads", () => {
+      axios.get.mockReturnValue(new Promise(() => {}));
       renderCategoryProduct();
 
       expect(screen.getByText(/Category -/)).toBeInTheDocument();
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 3. NAVIGATION
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('Navigation', () => {
-    it("navigates to product detail when 'More Details' is clicked", async () => {
+  describe("Navigation", () => {
+    it("navigates to product detail when More Details is clicked", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('Product 1')).toBeInTheDocument();
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
       });
 
-      const buttons = screen.getAllByRole('button', { name: /More Details/i });
+      const buttons = screen.getAllByRole("button", { name: /More Details/i });
       fireEvent.click(buttons[0]);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/product/product-1');
+      expect(mockNavigate).toHaveBeenCalledWith("/product/product-1");
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 4. ADD TO CART
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('Add to Cart', () => {
-    it('clicking ADD TO CART calls setCart, localStorage.setItem, and toast.success', async () => {
+  describe("Add to Cart", () => {
+    it("clicking ADD TO CART calls setCart, localStorage.setItem, and toast.success", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('Product 1')).toBeInTheDocument();
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
       });
 
-      const addToCartButtons = screen.getAllByRole('button', { name: /ADD TO CART/i });
+      const addToCartButtons = screen.getAllByRole("button", { name: /ADD TO CART/i });
       fireEvent.click(addToCartButtons[0]);
 
       expect(mockSetCart).toHaveBeenCalledWith([sampleProducts[0]]);
       expect(window.localStorage.setItem).toHaveBeenCalledWith(
-        'cart',
-        JSON.stringify([sampleProducts[0]]),
+        "cart",
+        JSON.stringify([sampleProducts[0]])
       );
-      expect(toast.success).toHaveBeenCalledWith('Item Added to cart');
+      expect(toast.success).toHaveBeenCalledWith("Item Added to cart");
     });
 
-    it('adds the correct product when second ADD TO CART is clicked', async () => {
+    it("adds the correct product when second ADD TO CART is clicked", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('Product 2')).toBeInTheDocument();
+        expect(screen.getByText("Product 2")).toBeInTheDocument();
       });
 
-      const addToCartButtons = screen.getAllByRole('button', { name: /ADD TO CART/i });
+      const addToCartButtons = screen.getAllByRole("button", { name: /ADD TO CART/i });
       fireEvent.click(addToCartButtons[1]);
 
       expect(mockSetCart).toHaveBeenCalledWith([sampleProducts[1]]);
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 5. PAGINATION (Load more)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('Pagination (Load more)', () => {
-    it('does NOT show Load more button when products <= 6', async () => {
+  describe("Pagination (Load more)", () => {
+    it("does NOT show Load more button when products <= 6", async () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('Product 1')).toBeInTheDocument();
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
       });
 
-      expect(screen.queryByRole('button', { name: /Load more/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Load more/i })).not.toBeInTheDocument();
     });
 
-    it('shows Load more button when products > 6', async () => {
+    it("shows Load more button when products > 6", async () => {
       axios.get.mockResolvedValue({
         data: { success: true, category: sampleCategory, products: manyProducts },
       });
@@ -318,11 +261,11 @@ describe('CategoryProduct – Unit Tests', () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Load more/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Load more/i })).toBeInTheDocument();
       });
     });
 
-    it('initially shows only 6 products when there are more than 6', async () => {
+    it("initially shows only 6 products when there are more than 6", async () => {
       axios.get.mockResolvedValue({
         data: { success: true, category: sampleCategory, products: manyProducts },
       });
@@ -330,14 +273,14 @@ describe('CategoryProduct – Unit Tests', () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('Product 1')).toBeInTheDocument();
-        expect(screen.getByText('Product 6')).toBeInTheDocument();
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+        expect(screen.getByText("Product 6")).toBeInTheDocument();
       });
 
-      expect(screen.queryByText('Product 7')).not.toBeInTheDocument();
+      expect(screen.queryByText("Product 7")).not.toBeInTheDocument();
     });
 
-    it('clicking Load more reveals additional products', async () => {
+    it("clicking Load more reveals additional products", async () => {
       axios.get.mockResolvedValue({
         data: { success: true, category: sampleCategory, products: manyProducts },
       });
@@ -345,18 +288,18 @@ describe('CategoryProduct – Unit Tests', () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Load more/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Load more/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: /Load more/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Load more/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Product 7')).toBeInTheDocument();
-        expect(screen.getByText('Product 8')).toBeInTheDocument();
+        expect(screen.getByText("Product 7")).toBeInTheDocument();
+        expect(screen.getByText("Product 8")).toBeInTheDocument();
       });
     });
 
-    it('hides Load more button after all products are revealed', async () => {
+    it("hides Load more button after all products are revealed", async () => {
       axios.get.mockResolvedValue({
         data: { success: true, category: sampleCategory, products: manyProducts },
       });
@@ -364,45 +307,53 @@ describe('CategoryProduct – Unit Tests', () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Load more/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Load more/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: /Load more/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Load more/i }));
 
       await waitFor(() => {
-        expect(screen.queryByRole('button', { name: /Load more/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Load more/i })).not.toBeInTheDocument();
       });
     });
 
-    it('shows "Loading ..." on the button while loading after clicking Load more', async () => {
-      // We can only observe the "Loading ..." text when the "Load more" button
-      // is already visible (requires products.length > page*6). The `loading`
-      // state is set inside getPrductsByCat, which is triggered by the slug
-      // useEffect — not by the Load more button. So "Loading ..." in the
-      // button text is only reachable if loading becomes true while the button
-      // is still rendered. Since the component doesn't expose loading state
-      // outside the button label, and the button only appears when there are
-      // enough products, we verify the button is present with correct text.
-      axios.get.mockResolvedValueOnce({
-        data: { success: true, category: sampleCategory, products: manyProducts },
-      });
+    it("shows Loading ... on the button when slug changes while products are loaded", async () => {
+      axios.get
+        .mockResolvedValueOnce({
+          data: { success: true, category: sampleCategory, products: manyProducts },
+        })
+        .mockReturnValueOnce(new Promise(() => {}));
 
-      renderCategoryProduct('electronics');
+      render(
+        <MemoryRouter initialEntries={["/category/electronics"]}>
+          <Routes>
+            <Route
+              path="/category/:slug"
+              element={
+                <div>
+                  <CategoryProduct />
+                  <Link to="/category/other" data-testid="change-slug">Change</Link>
+                </div>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      );
 
       await waitFor(() => {
-        const btn = screen.getByRole('button', { name: /Load more/i });
-        expect(btn).toBeInTheDocument();
-        expect(btn).toHaveTextContent('Load more');
+        expect(screen.getByRole("button", { name: /Load more/i })).toHaveTextContent("Load more");
+      });
+
+      fireEvent.click(screen.getByTestId("change-slug"));
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Loading/i })).toHaveTextContent("Loading ...");
       });
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 6. EMPTY & ERROR STATES
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('Empty and error states', () => {
-    it("shows '0 results found' when category has no products", async () => {
+  describe("Empty and error states", () => {
+    it("shows 0 results found when category has no products", async () => {
       axios.get.mockResolvedValue({
         data: { success: true, category: sampleCategory, products: [] },
       });
@@ -414,9 +365,9 @@ describe('CategoryProduct – Unit Tests', () => {
       });
     });
 
-    it('handles API failure gracefully without crashing', async () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      axios.get.mockRejectedValue(new Error('Server down'));
+    it("handles API failure gracefully without crashing", async () => {
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+      axios.get.mockRejectedValue(new Error("Server down"));
 
       renderCategoryProduct();
 
@@ -424,13 +375,13 @@ describe('CategoryProduct – Unit Tests', () => {
         expect(consoleSpy).toHaveBeenCalled();
       });
 
-      expect(screen.getByTestId('layout')).toBeInTheDocument();
+      expect(screen.getByTestId("layout")).toBeInTheDocument();
       consoleSpy.mockRestore();
     });
 
-    it('does not show product cards on API failure', async () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      axios.get.mockRejectedValue(new Error('Server down'));
+    it("does not show product cards on API failure", async () => {
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+      axios.get.mockRejectedValue(new Error("Server down"));
 
       renderCategoryProduct();
 
@@ -438,22 +389,18 @@ describe('CategoryProduct – Unit Tests', () => {
         expect(consoleSpy).toHaveBeenCalled();
       });
 
-      expect(screen.queryByRole('button', { name: /More Details/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /More Details/i })).not.toBeInTheDocument();
       consoleSpy.mockRestore();
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 7. PLURALIZATION
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('Pluralization of result count', () => {
+  describe("Pluralization of result count", () => {
     it.each([
-      [0, '0 results found'],
-      [1, '1 result found'],
-      [2, '2 results found'],
-      [10, '10 results found'],
-    ])('with %i products shows "%s"', async (count, expected) => {
+      [0, "0 results found"],
+      [1, "1 result found"],
+      [2, "2 results found"],
+      [10, "10 results found"],
+    ])("with %i products shows %s", async (count, expected) => {
       axios.get.mockResolvedValue({
         data: {
           success: true,
@@ -470,54 +417,44 @@ describe('CategoryProduct – Unit Tests', () => {
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 8. EDGE CASES (null guards)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('Edge cases', () => {
-    /**
-     * FIXED: Optional chaining / null guard on description prevents crash.
-     */
-    it('renders safely when product has no description (shows "...")', async () => {
+  describe("Edge cases", () => {
+    it("renders safely when product has no description", async () => {
       axios.get.mockResolvedValue({
         data: {
           success: true,
           category: sampleCategory,
-          products: [{ _id: 'p1', name: 'No Desc', price: 10, slug: 'no-desc' }],
+          products: [{ _id: "p1", name: "No Desc", price: 10, slug: "no-desc" }],
         },
       });
 
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('No Desc')).toBeInTheDocument();
+        expect(screen.getByText("No Desc")).toBeInTheDocument();
       });
 
-      expect(screen.getByText('...')).toBeInTheDocument();
+      expect(screen.getByText("...")).toBeInTheDocument();
     });
 
-    /**
-     * FIXED: Null guard on price falls back to 0.
-     */
-    it('renders safely when product has no price (shows $0.00)', async () => {
+    it("renders safely when product has no price", async () => {
       axios.get.mockResolvedValue({
         data: {
           success: true,
           category: sampleCategory,
-          products: [{ _id: 'p1', name: 'No Price', description: 'A description long enough here', slug: 'no-price' }],
+          products: [{ _id: "p1", name: "No Price", description: "A description long enough here", slug: "no-price" }],
         },
       });
 
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('No Price')).toBeInTheDocument();
-        expect(screen.getByText('$0.00')).toBeInTheDocument();
+        expect(screen.getByText("No Price")).toBeInTheDocument();
+        expect(screen.getByText("$0.00")).toBeInTheDocument();
       });
     });
 
-    it('truncates long descriptions to 60 chars', async () => {
-      const longDesc = 'X'.repeat(200);
+    it("truncates long descriptions to 60 chars", async () => {
+      const longDesc = "X".repeat(200);
       axios.get.mockResolvedValue({
         data: {
           success: true,
@@ -529,27 +466,27 @@ describe('CategoryProduct – Unit Tests', () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('X'.repeat(60) + '...')).toBeInTheDocument();
+        expect(screen.getByText("X".repeat(60) + "...")).toBeInTheDocument();
       });
     });
 
-    it('shows full description + "..." when description is shorter than 60 chars', async () => {
+    it("shows full description + '...' when description is shorter than 60 chars", async () => {
       axios.get.mockResolvedValue({
         data: {
           success: true,
           category: sampleCategory,
-          products: [makeProduct(1, { description: 'Short' })],
+          products: [makeProduct(1, { description: "Short" })],
         },
       });
 
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('Short...')).toBeInTheDocument();
+        expect(screen.getByText("Short...")).toBeInTheDocument();
       });
     });
 
-    it('renders a single product with singular "result found"', async () => {
+    it("renders a single product with singular result found", async () => {
       axios.get.mockResolvedValue({
         data: {
           success: true,
@@ -561,12 +498,12 @@ describe('CategoryProduct – Unit Tests', () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('Product 1')).toBeInTheDocument();
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
         expect(screen.getByText(/1 result found/)).toBeInTheDocument();
       });
     });
 
-    it('handles very expensive items with correct formatting', async () => {
+    it("handles very expensive items with correct formatting", async () => {
       axios.get.mockResolvedValue({
         data: {
           success: true,
@@ -578,113 +515,8 @@ describe('CategoryProduct – Unit Tests', () => {
       renderCategoryProduct();
 
       await waitFor(() => {
-        expect(screen.getByText('$999,999.99')).toBeInTheDocument();
+        expect(screen.getByText("$999,999.99")).toBeInTheDocument();
       });
     });
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// INTEGRATION TESTS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-describe('CategoryProduct – Integration Tests', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    axios.get.mockResolvedValue({
-      data: {
-        success: true,
-        category: sampleCategory,
-        products: sampleProducts,
-      },
-    });
-  });
-
-  it('full flow: loads category → displays products → navigates to detail', async () => {
-    renderCategoryProduct('electronics');
-
-    await waitFor(() => {
-      expect(screen.getByText('Category - Electronics')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText('Product 1')).toBeInTheDocument();
-    expect(screen.getByText('Product 2')).toBeInTheDocument();
-    expect(screen.getByText('Product 3')).toBeInTheDocument();
-
-    const detailBtns = screen.getAllByRole('button', { name: /More Details/i });
-    fireEvent.click(detailBtns[0]);
-
-    expect(mockNavigate).toHaveBeenCalledWith('/product/product-1');
-  });
-
-  it('full flow: loads category → adds item to cart', async () => {
-    renderCategoryProduct('electronics');
-
-    await waitFor(() => {
-      expect(screen.getByText('Product 1')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByRole('button', { name: /ADD TO CART/i })[0]);
-
-    expect(mockSetCart).toHaveBeenCalledWith([sampleProducts[0]]);
-    expect(window.localStorage.setItem).toHaveBeenCalledWith('cart', JSON.stringify([sampleProducts[0]]));
-    expect(toast.success).toHaveBeenCalledWith('Item Added to cart');
-  });
-
-  it('shows empty state when no products in category', async () => {
-    axios.get.mockResolvedValue({
-      data: {
-        success: true,
-        category: { _id: 'c1', name: 'Empty Cat', slug: 'empty-cat' },
-        products: [],
-      },
-    });
-
-    renderCategoryProduct('empty-cat');
-
-    await waitFor(() => {
-      expect(screen.getByText('Category - Empty Cat')).toBeInTheDocument();
-      expect(screen.getByText(/0 results found/)).toBeInTheDocument();
-    });
-
-    expect(screen.queryByRole('button', { name: /More Details/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /ADD TO CART/i })).not.toBeInTheDocument();
-  });
-
-  it('full pagination flow: loads 8 items → shows 6 → load more → shows all', async () => {
-    axios.get.mockResolvedValue({
-      data: { success: true, category: sampleCategory, products: manyProducts },
-    });
-
-    renderCategoryProduct();
-
-    await waitFor(() => {
-      expect(screen.getByText('Product 6')).toBeInTheDocument();
-    });
-
-    expect(screen.queryByText('Product 7')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /Load more/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Product 7')).toBeInTheDocument();
-      expect(screen.getByText('Product 8')).toBeInTheDocument();
-    });
-
-    expect(screen.queryByRole('button', { name: /Load more/i })).not.toBeInTheDocument();
-  });
-
-  it('guest to login flow: no auth state carried into cart on add', async () => {
-    // Cart context starts empty (guest); verify product appended correctly
-    renderCategoryProduct();
-
-    await waitFor(() => {
-      expect(screen.getByText('Product 1')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getAllByRole('button', { name: /ADD TO CART/i })[0]);
-
-    // setCart receives array with just the one item (cart was [])
-    expect(mockSetCart).toHaveBeenCalledWith([sampleProducts[0]]);
   });
 });
