@@ -53,6 +53,7 @@ function createRes() {
   };
 }
 
+
 describe("authController", () => {
   let mockReq, mockRes;
 
@@ -74,6 +75,7 @@ describe("authController", () => {
     };
   });
 
+  // Tsui Yi Wern, A0266070J
   describe("registerController", () => {
     it("returns 400 for missing name", async () => {
       mockReq.body = {
@@ -1328,6 +1330,7 @@ describe("authController", () => {
     });
   });
 
+  // Tsui Yi Wern, A0266070J
   describe("loginController", () => {
     it("returns 400 for missing email", async () => {
       mockReq.body = { password: "pass" };
@@ -1654,6 +1657,7 @@ describe("authController", () => {
     });
   });
 
+  // Tsui Yi Wern, A0266070J
   describe("forgotPasswordController", () => {
     it("returns 400 for missing email", async () => {
       mockReq.body = { answer: "ans", newPassword: "newpass" };
@@ -2127,6 +2131,7 @@ describe("authController", () => {
     });
   });
 
+  // Tsui Yi Wern, A0266070J
   describe("testController", () => {
     it('returns "Protected Routes" string', () => {
       mockRes.send = jest.fn();
