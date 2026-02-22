@@ -2180,6 +2180,7 @@ describe("authController", () => {
     });
   });
 
+  // Yeo Zi Yi, A0266292X
   describe("updateProfileController", () => {
     it("returns early with res.json error when password is shorter than 6 characters", async () => {
       // Arrange
@@ -2326,6 +2327,7 @@ describe("authController", () => {
     });
   });
 
+  // Yeo Zi Yi, A0266292X
   describe("getOrdersController", () => {
     it("returns orders for the authenticated buyer and calls populate twice", async () => {
       // Arrange
@@ -2374,6 +2376,7 @@ describe("authController", () => {
     });
   });
 
+  // Yeo Zi Yi, A0266292X
   describe("getAllOrdersController", () => {
     it("returns all orders and sorts by createdAt descending", async () => {
       // Arrange
@@ -2422,6 +2425,7 @@ describe("authController", () => {
     });
   });
 
+  // Yeo Zi Yi, A0266292X
   describe("orderStatusController", () => {
     it("updates order status by orderId and returns updated order", async () => {
       // Arrange

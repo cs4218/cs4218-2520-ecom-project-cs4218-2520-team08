@@ -1,3 +1,4 @@
+// Yeo Zi Yi, A0266292X
 import React from "react";
 import { fireEvent, render } from "@testing-library/react";
 import { SearchProvider, useSearch } from "./search";
@@ -25,6 +26,7 @@ function UpdateSearch({ nextKeyword = "k", nextResults = [] }) {
   );
 }
 
+// Yeo Zi Yi, A0266292X
 describe("search context", () => {
   it("useSearch returns undefined when used without SearchProvider", () => {
     // Arrange

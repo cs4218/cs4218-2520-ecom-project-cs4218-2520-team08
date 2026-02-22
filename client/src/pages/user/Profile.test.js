@@ -1,3 +1,4 @@
+// Yeo Zi Yi, A0266292X
 import React from "react";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -51,6 +52,7 @@ beforeEach(() => {
   localStorage.clear();
 });
 
+// Yeo Zi Yi, A0266292X
 describe("Profile page", () => {
   it("prefills fields from auth.user and keeps email disabled", async () => {
     // Arrange
