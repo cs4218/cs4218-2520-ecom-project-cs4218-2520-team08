@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axios from "axios";
 import Profile from "./Profile";
@@ -69,7 +69,10 @@ describe("Profile page", () => {
     ]);
 
     // Act
-    const { getByPlaceholderText } = render(<Profile />);
+    let getByPlaceholderText;
+    await act(async () => {
+      ({ getByPlaceholderText } = render(<Profile />));
+    });
 
     // Assert
     const nameInput = getByPlaceholderText("Enter Your Name");
@@ -104,20 +107,25 @@ describe("Profile page", () => {
       },
     });
 
-    const { getByPlaceholderText, getByRole } = render(<Profile />);
+    let getByPlaceholderText, getByRole;
+    await act(async () => {
+      ({ getByPlaceholderText, getByRole } = render(<Profile />));
+    });
 
     // Act
     fireEvent.change(getByPlaceholderText(/Enter Your Email/), {
       target: { value: "old+changed@example.com" },
     });
-    userEvent.clear(getByPlaceholderText("Enter Your Name"));
-    userEvent.type(getByPlaceholderText("Enter Your Name"), "New Name");
-    userEvent.type(getByPlaceholderText("Enter Your Password"), "pw");
-    userEvent.clear(getByPlaceholderText("Enter Your Phone"));
-    userEvent.type(getByPlaceholderText("Enter Your Phone"), "999");
-    userEvent.clear(getByPlaceholderText("Enter Your Address"));
-    userEvent.type(getByPlaceholderText("Enter Your Address"), "New Address");
-    userEvent.click(getByRole("button", { name: "UPDATE" }));
+    await act(async () => {
+      userEvent.clear(getByPlaceholderText("Enter Your Name"));
+      userEvent.type(getByPlaceholderText("Enter Your Name"), "New Name");
+      userEvent.type(getByPlaceholderText("Enter Your Password"), "pw");
+      userEvent.clear(getByPlaceholderText("Enter Your Phone"));
+      userEvent.type(getByPlaceholderText("Enter Your Phone"), "999");
+      userEvent.clear(getByPlaceholderText("Enter Your Address"));
+      userEvent.type(getByPlaceholderText("Enter Your Address"), "New Address");
+      userEvent.click(getByRole("button", { name: "UPDATE" }));
+    });
 
     // Assert
     await waitFor(() =>
@@ -159,10 +167,15 @@ describe("Profile page", () => {
     localStorage.setItem("auth", JSON.stringify({ ...auth }));
     axios.put.mockResolvedValueOnce({ data: { errro: true, error: "Bad request" } });
 
-    const { getByRole } = render(<Profile />);
+    let getByRole;
+    await act(async () => {
+      ({ getByRole } = render(<Profile />));
+    });
 
     // Act
-    userEvent.click(getByRole("button", { name: "UPDATE" }));
+    await act(async () => {
+      userEvent.click(getByRole("button", { name: "UPDATE" }));
+    });
 
     // Assert
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
@@ -186,10 +199,15 @@ describe("Profile page", () => {
     axios.put.mockRejectedValueOnce(err);
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
-    const { getByRole } = render(<Profile />);
+    let getByRole;
+    await act(async () => {
+      ({ getByRole } = render(<Profile />));
+    });
 
     // Act
-    userEvent.click(getByRole("button", { name: "UPDATE" }));
+    await act(async () => {
+      userEvent.click(getByRole("button", { name: "UPDATE" }));
+    });
 
     // Assert
     await waitFor(() => expect(axios.put).toHaveBeenCalled());
