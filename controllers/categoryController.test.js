@@ -288,7 +288,7 @@ describe('categoryController', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 4. singleCategoryController
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('singleCategoryController', () => {
     it('returns single category by slug with status 200', async () => {
       const cat = { _id: 'c1', name: 'Electronics', slug: 'electronics' };

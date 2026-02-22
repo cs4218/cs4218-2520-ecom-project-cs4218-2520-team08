@@ -45,7 +45,7 @@ const mockRequest = (overrides = {}) => ({
 // ═══════════════════════════════════════════════════════════════════════════════
 // categoryControlller (get all categories)
 // ═══════════════════════════════════════════════════════════════════════════════
-
+// Lee Seng Kitt, A0252087A
 describe('categoryControlller – GET /api/v1/category/get-category', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -112,7 +112,7 @@ describe('categoryControlller – GET /api/v1/category/get-category', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // productCountController
 // ═══════════════════════════════════════════════════════════════════════════════
-
+// Lee Seng Kitt, A0252087A
 describe('productCountController – GET /api/v1/product/product-count', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -180,7 +180,7 @@ describe('productCountController – GET /api/v1/product/product-count', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // productListController (pagination)
 // ═══════════════════════════════════════════════════════════════════════════════
-
+// Lee Seng Kitt, A0252087A
 describe('productListController – GET /api/v1/product/product-list/:page', () => {
   const mockChain = (result) => {
     const chain = {};
@@ -298,7 +298,7 @@ describe('productListController – GET /api/v1/product/product-list/:page', () 
 // ═══════════════════════════════════════════════════════════════════════════════
 // productFiltersController
 // ═══════════════════════════════════════════════════════════════════════════════
-
+// Lee Seng Kitt, A0252087A
 describe('productFiltersController – POST /api/v1/product/product-filters', () => {
   beforeEach(() => {
     jest.clearAllMocks();

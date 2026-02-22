@@ -55,7 +55,7 @@ const mockRequest = (overrides = {}) => ({
 // ═══════════════════════════════════════════════════════════════════════════════
 // braintreeTokenController
 // ═══════════════════════════════════════════════════════════════════════════════
-
+// Lee Seng Kitt, A0252087A
 describe('braintreeTokenController – GET /api/v1/product/braintree/token', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -110,7 +110,7 @@ describe('braintreeTokenController – GET /api/v1/product/braintree/token', () 
 // ═══════════════════════════════════════════════════════════════════════════════
 // brainTreePaymentController
 // ═══════════════════════════════════════════════════════════════════════════════
-
+// Lee Seng Kitt, A0252087A
 describe('brainTreePaymentController – POST /api/v1/product/braintree/payment', () => {
   beforeEach(() => {
     jest.clearAllMocks();

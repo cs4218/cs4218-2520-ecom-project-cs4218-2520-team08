@@ -5,7 +5,6 @@
  * hook to list all categories as clickable links.
  */
 
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import { MemoryRouter } from 'react-router-dom';
@@ -73,7 +72,7 @@ const renderCategories = () =>
   );
 
 // ─── Test Suite ─────────────────────────────────────────────────────────────
-
+// Lee Seng Kitt, A0252087A
 describe('Categories Page – Unit Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -86,7 +85,7 @@ describe('Categories Page – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. RENDERING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Rendering', () => {
     it("renders within Layout with 'All Categories' title", async () => {
       renderCategories();
@@ -132,7 +131,7 @@ describe('Categories Page – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 2. EMPTY STATE
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Empty state', () => {
     it('renders no links when there are no categories', async () => {
       axios.get.mockResolvedValue({
@@ -152,7 +151,7 @@ describe('Categories Page – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 3. ERROR HANDLING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Error handling', () => {
     it('renders empty page when API fails (no crash)', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
@@ -174,7 +173,7 @@ describe('Categories Page – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 4. DATA FETCHING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Data fetching', () => {
     it('calls /api/v1/category/get-category on mount', async () => {
       renderCategories();
@@ -196,7 +195,7 @@ describe('Categories Page – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 5. EDGE CASES
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Edge cases', () => {
     it('renders a single category correctly', async () => {
       axios.get.mockResolvedValue({

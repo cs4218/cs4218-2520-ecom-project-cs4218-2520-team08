@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import axios from 'axios';
@@ -140,8 +139,7 @@ const renderCartPage = () =>
     </MemoryRouter>,
   );
 
-// ─── Test Suite ─────────────────────────────────────────────────────────────
-
+// Lee Seng Kitt, A0252087A
 describe('CartPage – Unit Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -164,7 +162,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. GUEST USER RENDERING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Guest user (not logged in)', () => {
     it("displays 'Hello Guest' when no user is authenticated", () => {
       renderCartPage();
@@ -214,7 +212,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 2. LOGGED-IN USER RENDERING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Logged-in user with address', () => {
     beforeEach(() => {
       mockAuth = loggedInUser;
@@ -252,7 +250,7 @@ describe('CartPage – Unit Tests', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard/user/profile');
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Logged-in user without address', () => {
     beforeEach(() => {
       mockAuth = loggedInUserNoAddress;
@@ -269,7 +267,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 3. CART ITEM RENDERING
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Cart item display', () => {
     beforeEach(() => {
       mockAuth = loggedInUser;
@@ -320,7 +318,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 4. TOTAL PRICE CALCULATION
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Total price calculation', () => {
     beforeEach(() => {
       mockAuth = loggedInUser;
@@ -383,7 +381,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 5. REMOVE ITEM
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Remove item from cart', () => {
     beforeEach(() => {
       mockAuth = loggedInUser;
@@ -471,7 +469,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 6. CART SUMMARY
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Cart summary section', () => {
     it("renders 'Cart Summary' heading", () => {
       renderCartPage();
@@ -494,7 +492,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 7. BRAINTREE PAYMENT GATEWAY
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Braintree payment gateway', () => {
     beforeEach(() => {
       mockAuth = loggedInUser;
@@ -584,7 +582,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 8. PAYMENT FLOW
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Payment flow', () => {
     beforeEach(() => {
       mockAuth = loggedInUser;
@@ -758,7 +756,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 9. EMPTY CART STATES
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Empty cart states', () => {
     it('guest with empty cart shows empty message', () => {
       mockAuth = { user: null, token: '' };
@@ -791,7 +789,7 @@ describe('CartPage – Unit Tests', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // 10. EDGE CASES
   // ═══════════════════════════════════════════════════════════════════════════
-
+  // Lee Seng Kitt, A0252087A
   describe('Edge cases', () => {
     beforeEach(() => {
       mockAuth = loggedInUser;
@@ -855,7 +853,7 @@ describe('CartPage – Unit Tests', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // INTEGRATION TESTS
 // ═══════════════════════════════════════════════════════════════════════════════
-
+// Lee Seng Kitt, A0252087A
 describe('CartPage – Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -873,7 +871,7 @@ describe('CartPage – Integration Tests', () => {
 
     axios.post.mockImplementation(() => Promise.resolve({ data: { ok: true } }));
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Full checkout flow', () => {
     it('complete flow: view cart → remove item → payment', async () => {
       mockCart = [makeProduct(1, { price: 50 }), makeProduct(2, { price: 30 })];
@@ -914,7 +912,7 @@ describe('CartPage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Remove all items flow', () => {
     it('removes items one by one until cart is empty', () => {
       mockCart = [makeProduct(1), makeProduct(2)];
@@ -929,7 +927,7 @@ describe('CartPage – Integration Tests', () => {
       expect(window.localStorage.setItem).toHaveBeenCalledWith('cart', expect.any(String));
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Guest to login flow', () => {
     it('redirects guest to login with cart return state', () => {
       mockAuth = { user: null, token: '' };
@@ -943,7 +941,7 @@ describe('CartPage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Token + DropIn lifecycle', () => {
     it('fetches token on mount and renders DropIn when all conditions met', async () => {
       mockCart = [makeProduct(1)];
@@ -974,7 +972,7 @@ describe('CartPage – Integration Tests', () => {
       consoleSpy.mockRestore();
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Cart persistence contract', () => {
     it('removeCartItem persists to localStorage synchronously', () => {
       mockCart = [makeProduct(1), makeProduct(2)];
@@ -1014,7 +1012,7 @@ describe('CartPage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Conditional rendering states', () => {
     it('guest + empty cart: no DropIn, no Remove, shows empty + login', () => {
       mockAuth = { user: null, token: '' };
@@ -1071,7 +1069,7 @@ describe('CartPage – Integration Tests', () => {
       });
     });
   });
-
+  // Lee Seng Kitt, A0252087A
   describe('Multiple item count display', () => {
     it.each([
       [0, 'Your Cart Is Empty'],
@@ -1084,37 +1082,3 @@ describe('CartPage – Integration Tests', () => {
     });
   });
 });
-
-/*
- * ═══════════════════════════════════════════════════════════════════════════
- * BUGS FIXED IN THIS PR:
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * 1. CRASH ON MISSING DESCRIPTION (FIXED):
- *    Added optional chaining: `p.description?.substring(0, 30)`.
- *
- * 2. NaN TOTAL ON MISSING PRICE (FIXED):
- *    totalPrice() now uses `Number(item.price) || 0` to default missing
- *    or non-numeric prices to 0.
- *
- * 3. GRAMMATICALLY INCORRECT PLURALIZATION (FIXED):
- *    Now uses ternary: `cart.length === 1 ? "item" : "items"`.
- *
- * 4. map() USED FOR SIDE-EFFECTS IN totalPrice (FIXED):
- *    Replaced `cart?.map(...)` with `cart?.forEach(...)` for clarity.
- *
- * 5. MALFORMED JSON IN LOCALSTORAGE CRASHES PROVIDER (FIXED):
- *    CartProvider now wraps JSON.parse in try-catch, logs error, and
- *    removes bad localStorage entry.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * REMAINING KNOWN ISSUES (not fixed):
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * - DUPLICATE _id REMOVAL: findIndex removes first match, not the clicked one.
- * - NO QUANTITY SUPPORT: Each cart entry is a flat product object.
- * - CART CONTEXT DOES NOT AUTO-PERSIST on setCart.
- * - RAW PRICE DISPLAY in item card vs formatted total.
- * - NO ERROR TOAST ON PAYMENT FAILURE.
- * - CART NOT VALIDATED BEFORE PAYMENT.
- */
