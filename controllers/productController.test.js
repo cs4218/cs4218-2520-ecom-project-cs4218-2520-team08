@@ -505,6 +505,8 @@ describe("productCategoryController", () => {
   });
 });
 
+// Shivangi Kamat, A0319665R
+
 describe("createProductController", () => {
   test("validation: missing name -> 500", async () => {
     const req = {
@@ -611,6 +613,8 @@ describe("createProductController", () => {
   });
 });
 
+// Shivangi Kamat, A0319665R
+
 describe("updateProductController", () => {
   test("validation: missing category -> 500", async () => {
     const req = {
@@ -685,6 +689,8 @@ describe("updateProductController", () => {
     );
   });
 });
+
+// Shivangi Kamat, A0319665R
 
 describe("deleteProductController", () => {
   test("happy path: deletes product -> 200", async () => {

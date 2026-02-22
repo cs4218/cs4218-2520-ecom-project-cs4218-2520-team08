@@ -1,10 +1,4 @@
-/**
- * Unit Tests for categoryController.js
- *
- * Tests all 5 controller methods: create, update, getAll, single, delete.
- * Documents bugs found in the source code.
- */
-
+// Shivangi Kamat, A0319665R
 import {
   createCategoryController,
   updateCategoryController,
@@ -15,12 +9,10 @@ import {
 import categoryModel from '../models/categoryModel.js';
 import slugify from 'slugify';
 
-// ─── Mocks ──────────────────────────────────────────────────────────────────
 
 jest.mock('../models/categoryModel.js');
 jest.mock('slugify');
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
 
 const mockReq = (overrides = {}) => ({
   body: {},
@@ -35,17 +27,12 @@ const mockRes = () => {
   return res;
 };
 
-// ─── Test Suite ─────────────────────────────────────────────────────────────
 
 describe('categoryController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     slugify.mockImplementation((name) => name.toLowerCase().replace(/\s+/g, '-'));
   });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 1. createCategoryController
-  // ═══════════════════════════════════════════════════════════════════════════
 
   describe('createCategoryController', () => {
     it('returns 401 when name is not provided', async () => {
@@ -68,10 +55,6 @@ describe('categoryController', () => {
       expect(res.send).toHaveBeenCalledWith({ message: 'Name is required' });
     });
 
-    /**
-     * FIXED: When a duplicate category exists, the controller now returns
-     * status 409 (Conflict) with success: false.
-     */
     it('returns 409 with success: false for duplicate category', async () => {
       categoryModel.findOne.mockResolvedValue({
         _id: 'existing',

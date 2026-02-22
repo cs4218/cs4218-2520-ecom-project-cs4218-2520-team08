@@ -1,4 +1,4 @@
-// client/src/pages/admin/Products.test.js
+// Shivangi Kamat, A0319665R
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
