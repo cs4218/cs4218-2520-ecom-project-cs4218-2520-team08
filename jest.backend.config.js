@@ -21,16 +21,18 @@ module.exports = {
 
   // jest code coverage
   collectCoverage: true,
+  coverageDirectory: "<rootDir>/coverage/backend",
+  coverageReporters: ["json", "lcov", "text-summary"],
   collectCoverageFrom: [
-    "controllers/authController.js",
-    "controllers/productController.js",
     "helpers/authHelper.js",
-    "helpers/productHelper.js",
     "middlewares/authMiddleware.js",
-    "middlewares/productMiddleware.js",
-    "models/orderModel.js",
+    "controllers/authController.js",
+    "controllers/categoryController.js",
+    "controllers/productController.js",
     "models/userModel.js",
+    "models/orderModel.js",
     "models/productModel.js",
+    "models/categoryModel.js",
     "config/db.js",
   ],
   coverageThreshold: {

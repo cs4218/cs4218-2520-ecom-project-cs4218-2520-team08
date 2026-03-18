@@ -6,6 +6,7 @@ module.exports = {
   },
   moduleNameMapper: {
     "\\.(css|scss)$": "identity-obj-proxy",
+    "^axios$": "<rootDir>/client/node_modules/axios/dist/node/axios.cjs",
     "^react$": "<rootDir>/client/node_modules/react",
     "^react/(.*)$": "<rootDir>/client/node_modules/react/$1",
     "^react-dom$": "<rootDir>/client/node_modules/react-dom",
