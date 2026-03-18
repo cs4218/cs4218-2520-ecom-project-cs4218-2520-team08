@@ -210,7 +210,7 @@ const HomePage = () => {
                 ) : (
                   <>
                     {" "}
-                    Load More {" \u21BB"}
+                    Loadmore {" \u21BB"}
                   </>
                 )}
               </button>
