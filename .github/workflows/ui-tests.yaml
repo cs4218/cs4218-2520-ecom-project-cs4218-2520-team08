@@ -29,5 +29,8 @@ jobs:
       - name: Install Playwright dependencies
         run: npx playwright install
 
+      - name: Run local development server
+        run: npm run dev
+
       - name: Run UI tests
         run: npm run test:ui
