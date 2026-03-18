@@ -1,6 +1,8 @@
 # CS4218 Project - Virtual Vault
 
-[Unit Tests (Jest)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/unit-tests.yaml)
+[![Unit Tests (Jest)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/unit-tests.yaml/badge.svg)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/unit-tests.yaml)
+
+[![Integration Tests (Jest)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/integration-tests.yaml/badge.svg)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/integration-tests.yaml)
 
 ## Milestone 1 CI Run
 
