@@ -15,6 +15,7 @@ async function navigateToAnyProductDetail(page) {
   await page.waitForSelector(".product-details", { timeout: 10000 });
 }
 
+// Keagan Pang, A0258729L
 test.describe("Product Detail Page", () => {
   test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => localStorage.removeItem("cart"));

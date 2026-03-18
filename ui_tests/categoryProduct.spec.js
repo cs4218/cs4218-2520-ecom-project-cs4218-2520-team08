@@ -18,6 +18,7 @@ async function navigateToAnyCategory(page) {
   return categoryName;
 }
 
+// Keagan Pang, A0258729L
 test.describe("Category Product Page", () => {
   test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => localStorage.removeItem("cart"));

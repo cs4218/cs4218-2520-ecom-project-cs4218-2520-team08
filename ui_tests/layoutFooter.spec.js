@@ -2,6 +2,7 @@
 
 const { test, expect } = require("@playwright/test");
 
+// Keagan Pang, A0258729L
 test.describe("Page Layout and Footer", () => {
   test("every page has a navigation bar, content area, and footer", async ({
     page,

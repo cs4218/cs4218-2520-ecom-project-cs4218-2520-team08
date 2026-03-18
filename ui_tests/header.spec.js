@@ -2,6 +2,7 @@
 
 const { test, expect } = require("@playwright/test");
 
+// Keagan Pang, A0258729L
 test.describe("Navigation Header", () => {
   test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => localStorage.removeItem("cart"));
