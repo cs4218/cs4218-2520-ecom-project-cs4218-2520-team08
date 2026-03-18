@@ -55,13 +55,10 @@
 - `config/db.ts`
 - `pages/ProductDetails.js`
 - `pages/CategoryProduct.js`
-- `pages/Contact.js`
-- `pages/Policy.js`
 - `components/Footer.js`
 - `components/Header.js`
 - `components/Layout.js`
 - `components/Spinner.js`
-- `pages/About.js`
 
 ### Lee Seng Kitt
 
