@@ -1,3 +1,4 @@
+// Yeo Zi Yi, A0266292X
 import { connect, closeDatabase, clearDatabase } from "./helpers/testDb.js";
 import userModel from "../../models/userModel.js";
 import categoryModel from "../../models/categoryModel.js";
