@@ -101,8 +101,6 @@ test.describe("Auth UI: Authentication Flows", () => {
   test("Register with already-registered email shows API error toast", async ({
     page,
   }) => {
-    // TEST_USER was registered in beforeAll — submitting the same email again
-    // should trigger the duplicate-email rejection from the API.
     await page.goto("/register");
     await page.getByPlaceholder("Enter Your Name").fill(TEST_USER.name);
     await page.getByPlaceholder("Enter Your Email").fill(TEST_USER.email);
