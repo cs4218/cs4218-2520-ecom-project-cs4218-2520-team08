@@ -53,8 +53,8 @@ afterAll(async () => {
   await closeDatabase();
 });
 
-// Tsui Yi Wern, A0266070J
 describe("Backend Integration: Auth Controller", () => {
+  // Tsui Yi Wern, A0266070J
   describe("User registration with real DB", () => {
     it("creates a user document in MongoDB with a bcrypt-hashed password", async () => {
       const req = makeReq({ body: validUser });
@@ -91,7 +91,7 @@ describe("Backend Integration: Auth Controller", () => {
     });
   });
 
-
+  // Tsui Yi Wern, A0266070J
   describe("Registration input validation", () => {
     it("rejects registration with invalid email format and does not write to DB", async () => {
       const req = makeReq({ body: { ...validUser, email: "not-an-email" } });
