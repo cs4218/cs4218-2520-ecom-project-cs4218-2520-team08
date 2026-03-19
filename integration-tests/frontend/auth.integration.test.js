@@ -76,8 +76,11 @@ const renderWithProviders = (ui, { route = "/" } = {}) =>
 const waitForAsyncUpdates = () =>
   act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 
+let consoleErrorSpy;
+
 beforeEach(() => {
   jest.clearAllMocks();
+  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   Object.keys(localStorageData).forEach((k) => delete localStorageData[k]);
   axios.get.mockImplementation((url) => {
     if (url.includes("/get-category")) {
@@ -85,6 +88,10 @@ beforeEach(() => {
     }
     return Promise.resolve({ data: {} });
   });
+});
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore();
 });
 
 // Tsui Yi Wern, A0266070J
