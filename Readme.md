@@ -14,6 +14,56 @@
 
 #### Tsui Yi Wern (A0266070J)
 
+**Integration Tests**
+
+- `integration-tests/backend/authController.integration.test.js`
+- `integration-tests/frontend/auth.integration.test.js`
+
+| # | Test | Modules Integrated | Description |
+|---|------|--------------------|-------------|
+| 1 | User registration with real DB | `registerController`, `userModel`, `hashPassword` | Call `registerController` with a real DB connection. Verify the user document is actually created in MongoDB with a bcrypt-hashed password (not plaintext). Also verifies email is stored lowercase. |
+| 2 | User login and JWT validation | `loginController`, `userModel`, `comparePassword`, `JWT.sign` | Register a user in the DB, then call `loginController`. Verify it finds the user, correctly compares the password via bcrypt, and returns a valid JWT that can be decoded. Also verifies wrong-password and unregistered-email rejection. |
+| 3 | Register to login end-to-end flow | `registerController`, `loginController`, `userModel`, `authHelper` | Call register, then call login with the same credentials. Verify the returned user data matches what was registered and the JWT contains the correct user ID. Also verifies case-insensitive email login. |
+| 4 | Forgot password and reset flow | `forgotPasswordController`, `userModel`, `hashPassword` | Register a user, call `forgotPasswordController` with correct email and answer, then call `loginController` with the new password. Verify the new password works and the old one does not. Also verifies wrong-answer rejection and that new bcrypt hash is stored. |
+| 5 | Auth middleware access control | `requireSignIn`, `isAdmin`, `userModel`, `JWT` | Create an admin user in the DB, generate a real JWT for them, pass it through `requireSignIn` then `isAdmin`. Verify `req.user` is set and admin access is granted. Repeat with a non-admin user and verify 401 rejection. Also verifies invalid token does not call next. |
+| 6 | Duplicate email registration prevention | `registerController`, `userModel` | Register a user, then attempt to register again with the same email. Verify the second call returns a failure response and no duplicate document exists in the DB. Also verifies case-insensitive duplicate detection. |
+| 7 | Login page within full Layout | `Login`, `Layout`, `Header`, `Footer`, `AuthProvider` | Render the Login page inside real Layout with real AuthProvider. Verify Header, Footer, and Login form all render together. Also verifies Register/Login nav links show when unauthenticated. |
+| 8 | Login success and auth context update | `Login`, `AuthProvider`, `Header`, `useAuth` | Mock axios to return a successful login response. Fill in the login form and submit. Verify the auth context updates, the Header reflects the logged-in user (shows username, hides Login link), and localStorage is updated. Also verifies error toast on failed login. |
+| 9 | Login form validation | `Login`, `validationHelper` | Submit the login form with a whitespace-only password and verify the error toast fires without calling the API. Also verifies XSS in password is rejected, and the Forgot Password button navigates to the forgot-password page. |
+| 10 | ForgotPassword page | `ForgotPassword`, `Layout`, `Header`, `Footer`, `validationHelper` | Render the ForgotPassword page inside Layout. Verify the form renders with all fields. Submit with valid data and verify the success toast fires and the user is navigated to the login page. Also verifies failed reset shows error toast, XSS in answer is rejected, and whitespace-only answer is rejected. |
+| 11 | Private route access control | `Private`, `Spinner`, `AuthProvider` | Render a Private route-wrapped component with no auth token in context. Verify the Spinner countdown appears and no auth API is called. Also verifies protected content renders when auth API returns ok: true. |
+| 12 | Register form validation | `Register`, `Layout`, `validationHelper` | Render Register within Layout. Enter invalid data (XSS strings, invalid phone). Verify validation toast messages appear without making an API call. Also verifies valid submission calls axios.post, successful registration shows success toast and navigates to login, and failed registration shows the API error message. |
+| 13 | Dashboard and user menu rendering | `Dashboard`, `Layout`, `AuthProvider`, `useAuth` | Render Dashboard with a pre-authenticated user from localStorage. Verify all user fields (name, email, address, phone, DOB) appear in the card, and UserMenu shows Profile and Orders nav links. |
+| 14 | Logout flow | `Header`, `AuthProvider`, `useAuth` | Pre-authenticate a user and render the app. Click the Logout button. Verify the username disappears, the Login nav link reappears, and localStorage.removeItem is called with "auth". |
+| 15 | Auth session persistence from localStorage | `AuthProvider`, `useAuth`, `Header` | Pre-populate localStorage with auth data and render the app. Verify the AuthProvider restores user and token from storage on initial load, and the Header shows the persisted user's name. |
+
+**UI Tests**
+
+- `ui_tests/auth.spec.js`
+
+| #   | Test | Pages / Components Traversed | Description |
+| --- | ---- | ---------------------------- | ----------- |
+| 1   | Register page renders correct structure | `/register` | Navigate to the Register page. Verify the header ("Virtual Vault"), the "REGISTER FORM" heading, all input fields (Name, Email, Password, Phone, Address, DOB, Favourite sports), the REGISTER button, and the footer ("All Rights Reserved") are all visible. |
+| 2   | Successful registration redirects to login | `/register` → `/login` | Fill in the Register form with valid unique credentials and submit. Verify a success toast ("Register Successfully, please login") appears and the browser navigates to the `/login` page. |
+| 3   | Register form rejects invalid phone number | `/register` | Fill in the Register form with a non-numeric phone field and submit. Verify an error toast ("Phone number must contain only digits") appears and the user remains on the Register page. |
+| 4   | Register with already-registered email shows API error toast | `/register` | Submit the Register form using an email that already exists in the DB. Verify the API error toast ("Already Register please login") appears and the user stays on the Register page. |
+| 5   | Register form rejects XSS input | `/register` | Fill in the Register form with a script tag in the Name field and submit. Verify an error toast ("Invalid characters detected") appears and no navigation occurs. |
+| 6   | Login page renders correct structure | `/login` | Navigate to the Login page. Verify the header ("Virtual Vault"), email and password inputs, the LOGIN button, the Forgot Password button, and the footer are all visible. Register and Login nav links appear in the header. |
+| 7   | Successful login updates header and persists session | `/login` → `/` | Fill in valid credentials on the Login page and submit. Verify the header switches from showing "Login" to showing the user's name. Reload the page and verify the user is still logged in (name still visible, no Login link). |
+| 8   | Login failure shows error toast | `/login` | Submit the Login form with correct email but wrong password. Verify an error toast appears and the user stays on the Login page. |
+| 9   | Login form rejects whitespace-only password | `/login` | Enter a valid email and a whitespace-only string as the password. Click LOGIN. Verify the toast ("Password cannot be whitespace only") appears without making a network request to the login API. |
+| 10  | Login form rejects XSS in password | `/login` | Enter a script tag as the password. Click LOGIN. Verify the toast ("Invalid characters detected") appears and no navigation occurs. |
+| 11  | Forgot Password button navigates to forgot-password page | `/login` → `/forgot-password` | On the Login page, click the "Forgot Password" button. Verify the browser navigates to `/forgot-password` and the "FORGOT PASSWORD FORM" heading is visible. |
+| 12  | Forgot Password page renders correct structure | `/forgot-password` | Navigate to the Forgot Password page. Verify the header ("Virtual Vault"), the "FORGOT PASSWORD FORM" heading, all three input fields (Email, Answer, New Password), and the footer are all visible. |
+| 13  | Successful password reset redirects to login | `/forgot-password` → `/login` | Fill in the Forgot Password form with the registered email, security-question answer, and a new password, then submit. Verify a success toast ("Password Reset Successfully") appears and the page navigates to `/login`. |
+| 14  | Forgot Password failure shows error toast | `/forgot-password` | Submit the Forgot Password form with a wrong security-question answer. Verify an error toast ("Wrong Email Or Answer") appears and the user remains on the page. |
+| 15  | Forgot Password rejects XSS in answer | `/forgot-password` | Enter a script tag as the security-question answer. Click FORGOT PASSWORD. Verify the toast ("Invalid characters detected") appears and no API request is made. |
+| 16  | Forgot Password rejects whitespace-only answer | `/forgot-password` | Enter whitespace as the security-question answer. Click FORGOT PASSWORD. Verify the toast ("Answer cannot be whitespace only") appears and no API request is made. |
+| 17  | Unauthenticated access to private route shows spinner | `/dashboard/user` | Without logging in, navigate directly to `/dashboard/user`. Verify the Spinner countdown ("redirecting to you in") is visible and the protected dashboard content is not rendered. |
+| 18  | Authenticated user can access private dashboard | `/login` → `/dashboard/user` | Log in with valid credentials then navigate to `/dashboard/user`. Verify the dashboard content (user name, email) is visible and the spinner is not shown. |
+| 19  | Dashboard shows UserMenu with Profile and Orders links | `/login` → `/dashboard/user` | Log in and navigate to `/dashboard/user`. Verify the UserMenu sidebar contains both a "Profile" link and an "Orders" link. |
+| 20  | Logout clears session and restores nav links | `/login` → logout | Log in, verify the username appears in the header. Click the Logout button. Verify the username disappears, the Login nav link reappears, and navigating back to `/dashboard/user` shows the spinner instead of dashboard content. |
+
 ---
 
 #### Yeo Zi Yi (A0266292X)
