@@ -14,6 +14,29 @@
 
 #### Tsui Yi Wern (A0266070J)
 
+**Integration Tests**
+
+- `integration-tests/backend/authController.integration.test.js`
+- `integration-tests/frontend/auth.integration.test.js`
+
+| # | Test | Modules Integrated | Description |
+|---|------|--------------------|-------------|
+| 1 | User registration with real DB | `registerController`, `userModel`, `hashPassword` | Call `registerController` with a real DB connection. Verify the user document is actually created in MongoDB with a bcrypt-hashed password (not plaintext). Also verifies email is stored lowercase. |
+| 2 | User login and JWT validation | `loginController`, `userModel`, `comparePassword`, `JWT.sign` | Register a user in the DB, then call `loginController`. Verify it finds the user, correctly compares the password via bcrypt, and returns a valid JWT that can be decoded. Also verifies wrong-password and unregistered-email rejection. |
+| 3 | Register to login end-to-end flow | `registerController`, `loginController`, `userModel`, `authHelper` | Call register, then call login with the same credentials. Verify the returned user data matches what was registered and the JWT contains the correct user ID. Also verifies case-insensitive email login. |
+| 4 | Forgot password and reset flow | `forgotPasswordController`, `userModel`, `hashPassword` | Register a user, call `forgotPasswordController` with correct email and answer, then call `loginController` with the new password. Verify the new password works and the old one does not. Also verifies wrong-answer rejection and that new bcrypt hash is stored. |
+| 5 | Auth middleware access control | `requireSignIn`, `isAdmin`, `userModel`, `JWT` | Create an admin user in the DB, generate a real JWT for them, pass it through `requireSignIn` then `isAdmin`. Verify `req.user` is set and admin access is granted. Repeat with a non-admin user and verify 401 rejection. Also verifies invalid token does not call next. |
+| 6 | Duplicate email registration prevention | `registerController`, `userModel` | Register a user, then attempt to register again with the same email. Verify the second call returns a failure response and no duplicate document exists in the DB. Also verifies case-insensitive duplicate detection. |
+| 7 | Login page within full Layout | `Login`, `Layout`, `Header`, `Footer`, `AuthProvider` | Render the Login page inside real Layout with real AuthProvider. Verify Header, Footer, and Login form all render together. Also verifies Register/Login nav links show when unauthenticated. |
+| 8 | Login success and auth context update | `Login`, `AuthProvider`, `Header`, `useAuth` | Mock axios to return a successful login response. Fill in the login form and submit. Verify the auth context updates, the Header reflects the logged-in user (shows username, hides Login link), and localStorage is updated. Also verifies error toast on failed login. |
+| 9 | Login form validation | `Login`, `validationHelper` | Submit the login form with a whitespace-only password and verify the error toast fires without calling the API. Also verifies XSS in password is rejected, and the Forgot Password button navigates to the forgot-password page. |
+| 10 | ForgotPassword page | `ForgotPassword`, `Layout`, `Header`, `Footer`, `validationHelper` | Render the ForgotPassword page inside Layout. Verify the form renders with all fields. Submit with valid data and verify the success toast fires and the user is navigated to the login page. Also verifies failed reset shows error toast, XSS in answer is rejected, and whitespace-only answer is rejected. |
+| 11 | Private route access control | `Private`, `Spinner`, `AuthProvider` | Render a Private route-wrapped component with no auth token in context. Verify the Spinner countdown appears and no auth API is called. Also verifies protected content renders when auth API returns ok: true. |
+| 12 | Register form validation | `Register`, `Layout`, `validationHelper` | Render Register within Layout. Enter invalid data (XSS strings, invalid phone). Verify validation toast messages appear without making an API call. Also verifies valid submission calls axios.post, successful registration shows success toast and navigates to login, and failed registration shows the API error message. |
+| 13 | Dashboard and user menu rendering | `Dashboard`, `Layout`, `AuthProvider`, `useAuth` | Render Dashboard with a pre-authenticated user from localStorage. Verify all user fields (name, email, address, phone, DOB) appear in the card, and UserMenu shows Profile and Orders nav links. |
+| 14 | Logout flow | `Header`, `AuthProvider`, `useAuth` | Pre-authenticate a user and render the app. Click the Logout button. Verify the username disappears, the Login nav link reappears, and localStorage.removeItem is called with "auth". |
+| 15 | Auth session persistence from localStorage | `AuthProvider`, `useAuth`, `Header` | Pre-populate localStorage with auth data and render the app. Verify the AuthProvider restores user and token from storage on initial load, and the Header shows the persisted user's name. |
+
 ---
 
 #### Yeo Zi Yi (A0266292X)
