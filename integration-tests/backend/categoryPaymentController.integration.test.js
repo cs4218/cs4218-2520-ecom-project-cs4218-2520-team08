@@ -108,24 +108,25 @@ describe('Backend Integration: Category & Payment Controllers', () => {
       expect(body.category.slug).toBe('electronics');
     });
 
-    it('returns null category gracefully for a non-existent slug', async () => {
+    it('returns 404 for a non-existent slug', async () => {
       const req = makeReq({ params: { slug: 'nonexistent' } });
       const res = makeRes();
 
       await singleCategoryController(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.status).toHaveBeenCalledWith(404);
       const body = res.send.mock.calls[0][0];
-      expect(body.success).toBe(true);
-      expect(body.category).toBeNull();
+      expect(body.success).toBe(false);
+      expect(body.message).toBe('Category Not Found');
     });
   });
 
   // ─── Test 3 ────────────────────────────────────────────────────────────────
   describe('Payment creates order with products', () => {
-    it('creates an order document in MongoDB with correct buyer, products, payment, and default status', async () => {
-      // Create a user
-      const user = await userModel.create({
+    let user, cat, product1, product2;
+
+    beforeEach(async () => {
+      user = await userModel.create({
         name: 'Test Buyer',
         email: 'buyer@test.com',
         password: 'hashedpassword123',
@@ -134,10 +135,8 @@ describe('Backend Integration: Category & Payment Controllers', () => {
         DOB: '1990-01-01',
         answer: 'testanswer',
       });
-
-      // Create a category and two products
-      const cat = await categoryModel.create({ name: 'General', slug: 'general' });
-      const product1 = await productModel.create({
+      cat = await categoryModel.create({ name: 'General', slug: 'general' });
+      product1 = await productModel.create({
         name: 'Widget A',
         slug: 'widget-a',
         description: 'First widget',
@@ -145,7 +144,7 @@ describe('Backend Integration: Category & Payment Controllers', () => {
         category: cat._id,
         quantity: 10,
       });
-      const product2 = await productModel.create({
+      product2 = await productModel.create({
         name: 'Widget B',
         slug: 'widget-b',
         description: 'Second widget',
@@ -153,13 +152,15 @@ describe('Backend Integration: Category & Payment Controllers', () => {
         category: cat._id,
         quantity: 5,
       });
+    });
 
+    it('creates an order document in MongoDB with correct buyer, products, payment, and default status', async () => {
       const req = makeReq({
         body: {
           nonce: 'fake-nonce',
           cart: [
-            { _id: product1._id, price: 25 },
-            { _id: product2._id, price: 75 },
+            { _id: product1._id },
+            { _id: product2._id },
           ],
         },
         user: { _id: user._id },
@@ -193,6 +194,30 @@ describe('Backend Integration: Category & Payment Controllers', () => {
       expect(order.payment.success).toBe(true);
       expect(order.payment.transaction.id).toBe('fake_txn_123');
       expect(order.status).toBe('Not Process');
+    });
+
+    it('rejects payment when cart contains non-existent product IDs', async () => {
+      const fakeId = '507f1f77bcf86cd799439011';
+      const req = makeReq({
+        body: {
+          nonce: 'fake-nonce',
+          cart: [
+            { _id: product1._id },
+            { _id: fakeId },
+          ],
+        },
+        user: { _id: user._id },
+      });
+      const res = makeRes();
+
+      await brainTreePaymentController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({ error: 'One or more products not found' });
+
+      // No order should have been created
+      const orders = await orderModel.find({});
+      expect(orders).toHaveLength(0);
     });
   });
 
