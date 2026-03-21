@@ -75,7 +75,14 @@ beforeEach(() => {
 const originalError = console.error;
 beforeAll(() => {
   console.error = (...args) => {
-    if (/Warning: An update to.*inside a test was not wrapped in act/.test(args[0])) {
+    if (
+      typeof args[0] === "string" &&
+      (args[0].includes("Warning: An update to") ||
+        args[0].includes("`bordered` is deprecated") ||
+        args[0].includes("`visible` is deprecated") ||
+        args[0].includes('unique "key" prop') ||
+        args[0].includes("Not implemented: HTMLFormElement.prototype.submit"))
+    ) {
       return;
     }
     originalError.call(console, ...args);
