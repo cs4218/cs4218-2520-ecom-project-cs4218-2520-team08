@@ -3,16 +3,16 @@ import { render, screen, waitFor, fireEvent, act } from "@testing-library/react"
 import "@testing-library/jest-dom/extend-expect";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import axios from "axios";
-import AdminDashboard from "../../client/src/pages/Admin/AdminDashboard";
-import CreateCategory from "../../client/src/pages/Admin/CreateCategory";
-import CreateProduct from "../../client/src/pages/Admin/CreateProduct";
-import UpdateProduct from "../../client/src/pages/Admin/UpdateProduct";
-import AdminOrders from "../../client/src/pages/Admin/AdminOrders";
-import Products from "../../client/src/pages/Admin/Products";
+import AdminDashboard from "../../client/src/pages/admin/AdminDashboard";
+import CreateCategory from "../../client/src/pages/admin/CreateCategory";
+import CreateProduct from "../../client/src/pages/admin/CreateProduct";
+import UpdateProduct from "../../client/src/pages/admin/UpdateProduct";
+import AdminOrders from "../../client/src/pages/admin/AdminOrders";
+import Products from "../../client/src/pages/admin/Products";
 import { AuthProvider } from "../../client/src/context/auth";
 import { CartProvider } from "../../client/src/context/cart";
 import { SearchProvider } from "../../client/src/context/search";
-
+// Jest config 
 jest.mock("axios");
 
 Object.defineProperty(window, "matchMedia", {
