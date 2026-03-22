@@ -65,9 +65,16 @@ test.describe('Cart Management and Category Shopping', () => {
     await page.getByRole('link', { name: 'Cart' }).click();
     await page.waitForSelector('.cart-page', { timeout: 10000 });
 
-    // Verify both items displayed
+    // Verify both items displayed with their names and prices
     await expect(page.locator('.cart-page .col-md-4 p').filter({ hasText: firstName.trim() }).first()).toBeVisible();
     await expect(page.locator('.cart-page .col-md-4 p').filter({ hasText: secondName.trim() }).first()).toBeVisible();
+
+    // Verify each item shows its price in the cart
+    const cartItemPrices = page.locator('.cart-page .col-md-4 p').filter({ hasText: /Price/ });
+    const firstCartItemPrice = await cartItemPrices.nth(0).textContent();
+    const secondCartItemPrice = await cartItemPrices.nth(1).textContent();
+    expect(firstCartItemPrice).toContain(String(firstPrice));
+    expect(secondCartItemPrice).toContain(String(secondPrice));
 
     // Verify total is sum of both
     const totalText = await page.locator('.cart-summary h4').textContent();
@@ -267,7 +274,8 @@ test.describe('Cart Management and Category Shopping', () => {
     await categoryLinks.first().click();
     await page.locator('.category .card').first().waitFor({ timeout: 10000 });
 
-    // Add a product from first category
+    // Capture the first product's name and add it to cart
+    const firstProductName = (await page.locator('.category .card').first().locator('.card-title').first().textContent()).trim();
     await page.locator('.category .card').first().getByRole('button', { name: 'ADD TO CART' }).click();
     await page.waitForTimeout(500);
 
@@ -281,7 +289,8 @@ test.describe('Cart Management and Category Shopping', () => {
     await categoryLinks.nth(1).click();
     await page.locator('.category .card').first().waitFor({ timeout: 10000 });
 
-    // Add a product from second category
+    // Capture the second product's name and add it to cart
+    const secondProductName = (await page.locator('.category .card').first().locator('.card-title').first().textContent()).trim();
     await page.locator('.category .card').first().getByRole('button', { name: 'ADD TO CART' }).click();
     await page.waitForTimeout(500);
 
@@ -289,9 +298,11 @@ test.describe('Cart Management and Category Shopping', () => {
     await page.getByRole('link', { name: 'Cart' }).click();
     await page.waitForSelector('.cart-page', { timeout: 10000 });
 
-    // Verify both items are present
+    // Verify both items are present, each from a different category
     const cartItems = page.locator('.cart-page .card');
     await expect(cartItems).toHaveCount(2);
+    await expect(page.locator('.cart-page .col-md-4 p').filter({ hasText: firstProductName }).first()).toBeVisible();
+    await expect(page.locator('.cart-page .col-md-4 p').filter({ hasText: secondProductName }).first()).toBeVisible();
   });
 
   // ──────────────────────────────────────────────────────────────────────
@@ -349,6 +360,8 @@ test.describe('Cart Management and Category Shopping', () => {
       .locator('.product-details-info h6')
       .filter({ hasText: /^Price/ })
       .textContent();
+    // Extract the numeric price from the details page (e.g. "Price :$79.99" -> "79.99")
+    const capturedPrice = priceField.replace(/[^0-9.]/g, '');
 
     // Click "ADD TO CART"
     await page.locator('.product-details-info').getByRole('button', { name: 'ADD TO CART' }).click();
@@ -359,6 +372,10 @@ test.describe('Cart Management and Category Shopping', () => {
 
     // Verify the product appears with correct name
     await expect(page.locator('.cart-page').getByText(capturedName, { exact: true })).toBeVisible();
+
+    // Verify the product price in the cart matches what was shown on the details page
+    const cartPriceText = await page.locator('.cart-page .col-md-4 p').filter({ hasText: /Price/ }).first().textContent();
+    expect(cartPriceText).toContain(capturedPrice);
   });
 
   // ──────────────────────────────────────────────────────────────────────
@@ -366,13 +383,35 @@ test.describe('Cart Management and Category Shopping', () => {
   // ──────────────────────────────────────────────────────────────────────
   test('Cart Badge Reflects Adds from Category Pages', async ({ page }) => {
     // Navigate to a category page via the Categories dropdown
+    // Pick a category that has at least 2 products
     await page.waitForSelector('.home-page .card', { timeout: 10000 });
     await page.getByRole('link', { name: 'Categories' }).click();
     const dropdown = page.locator('.dropdown-menu.show');
     await dropdown.waitFor({ timeout: 5000 });
     const categoryLinks = dropdown.locator('a.dropdown-item').filter({ hasNotText: 'All Categories' });
-    await categoryLinks.first().click();
-    await page.locator('.category .card').first().waitFor({ timeout: 10000 });
+    const categoryCount = await categoryLinks.count();
+
+    // Try each category until we find one with ≥2 products
+    let foundCategory = false;
+    for (let i = 0; i < categoryCount; i++) {
+      // Re-open dropdown if needed (it closes after a click)
+      if (i > 0) {
+        await page.getByRole('link', { name: 'Categories' }).click();
+        const dd = page.locator('.dropdown-menu.show');
+        await dd.waitFor({ timeout: 5000 });
+        const links = dd.locator('a.dropdown-item').filter({ hasNotText: 'All Categories' });
+        await links.nth(i).click();
+      } else {
+        await categoryLinks.nth(i).click();
+      }
+      await page.locator('.category .card').first().waitFor({ timeout: 10000 });
+      const cardCount = await page.locator('.category .card').count();
+      if (cardCount >= 2) {
+        foundCategory = true;
+        break;
+      }
+    }
+    expect(foundCategory).toBe(true);
 
     const cartBadge = page.locator('.ant-badge sup');
 
@@ -380,19 +419,15 @@ test.describe('Cart Management and Category Shopping', () => {
     await page.locator('.category .card').nth(0).getByRole('button', { name: 'ADD TO CART' }).click();
     await expect(cartBadge).toHaveText('1');
 
-    // Click "ADD TO CART" on the second product (if exists)
-    const cardCount = await page.locator('.category .card').count();
-    if (cardCount >= 2) {
-      await page.locator('.category .card').nth(1).getByRole('button', { name: 'ADD TO CART' }).click();
-      await expect(cartBadge).toHaveText('2');
-    }
+    // Click "ADD TO CART" on the second product
+    await page.locator('.category .card').nth(1).getByRole('button', { name: 'ADD TO CART' }).click();
+    await expect(cartBadge).toHaveText('2');
 
-    // Navigate to cart and verify items are listed
+    // Navigate to cart and verify both items are listed
     await page.getByRole('link', { name: 'Cart' }).click();
     await page.waitForSelector('.cart-page', { timeout: 10000 });
 
-    const expectedCount = cardCount >= 2 ? 2 : 1;
     const cartItems = page.locator('.cart-page .card');
-    await expect(cartItems).toHaveCount(expectedCount);
+    await expect(cartItems).toHaveCount(2);
   });
 });
