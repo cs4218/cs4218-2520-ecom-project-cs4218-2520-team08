@@ -11,9 +11,8 @@
  *         Anyone can generate a client token, enabling unauthorized
  *         payment form rendering.
  *
- * [SEC-2] Payment amount is computed from client-provided cart prices,
- *         NOT verified against server-side product prices. An attacker
- *         can send { price: 0.01 } for a $999 item.
+ * [SEC-2] FIXED — Payment amount is now computed from server-side product
+ *         prices, NOT from client-provided cart prices.
  *
  * [SEC-3] No idempotency key or duplicate-payment guard. The same nonce
  *         and cart can be submitted multiple times, creating duplicate
@@ -27,14 +26,14 @@
  *
  * [BUG-3] FIXED — Cart is validated (null/undefined/non-array → 500).
  *
- * [BUG-4] NOT FIXED — No validation of individual cart item prices.
- *         Negative, NaN, undefined, or string values still accepted.
+ * [BUG-4] FIXED — Client-provided prices are no longer used;
+ *         server-side DB prices are used for total computation.
  *
  * [BUG-5] FIXED — order.save() is now awaited.
  *
  * [BUG-6] FIXED — brainTreePaymentController outer catch now sends 500.
  *
- * [BUG-7] NOT FIXED — Full cart objects stored instead of ObjectIds.
+ * [BUG-7] FIXED — Product IDs are now stored instead of full cart objects.
  *
  * [BUG-8] NOT FIXED — Gateway initialized at module level with env vars.
  */
@@ -72,10 +71,14 @@ jest.mock('../models/orderModel.js', () => {
 
 // ─── Other module mocks (prevent side effects) ─────────────────────────────
 jest.mock('dotenv', () => ({ config: jest.fn() }));
-jest.mock('../models/productModel.js', () => ({
-  __esModule: true,
-  default: {},
-}));
+let mockProductFind;
+jest.mock('../models/productModel.js', () => {
+  const find = jest.fn();
+  return {
+    __esModule: true,
+    default: { find, __getMocks: () => ({ find }) },
+  };
+});
 jest.mock('../models/categoryModel.js', () => ({
   __esModule: true,
   default: {},
@@ -87,11 +90,13 @@ jest.mock('fs');
 import { braintreeTokenController, brainTreePaymentController } from './productController.js';
 import orderModel from '../models/orderModel.js';
 import braintree from 'braintree';
+import productModelMock from '../models/productModel.js';
 
 // Retrieve the actual mock function references created inside jest.mock factory
 const braintreeMocks = braintree.__getMocks();
 mockGenerate = braintreeMocks.generate;
 mockSale = braintreeMocks.sale;
+mockProductFind = productModelMock.__getMocks().find;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function makeReq(body = {}, user = { _id: 'user123' }) {
@@ -230,6 +235,11 @@ describe('brainTreePaymentController', () => {
     req = makeReq({ nonce: validNonce, cart: validCart }, fakeUser);
     res = makeRes();
     mockSave.mockResolvedValue({});
+    // Mock productModel.find to return DB products matching validCart
+    mockProductFind.mockResolvedValue([
+      { _id: 'prod1', name: 'Widget', price: 29.99 },
+      { _id: 'prod2', name: 'Gadget', price: 49.99 },
+    ]);
   });
 
   // ── Success path ────────────────────────────────────────────────────────
@@ -252,7 +262,7 @@ describe('brainTreePaymentController', () => {
     );
 
     expect(orderModel).toHaveBeenCalledWith({
-      products: validCart,
+      products: ['prod1', 'prod2'],
       payment: fakeResult,
       buyer: 'user456',
     });
@@ -260,18 +270,25 @@ describe('brainTreePaymentController', () => {
     expect(res.json).toHaveBeenCalledWith({ ok: true });
   });
 
-  test('should compute total from all cart item prices', async () => {
+  test('should compute total from DB product prices, not client-provided prices', async () => {
     const cart = [
       { _id: 'a', price: 10 },
       { _id: 'b', price: 20 },
       { _id: 'c', price: 30 },
     ];
     req = makeReq({ nonce: validNonce, cart }, fakeUser);
+    // DB products have different prices than what the client sent
+    mockProductFind.mockResolvedValue([
+      { _id: 'a', price: 15 },
+      { _id: 'b', price: 25 },
+      { _id: 'c', price: 35 },
+    ]);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
 
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 60 }), expect.any(Function));
+    // Total should be sum of DB prices (15+25+35=75), not client prices (10+20+30=60)
+    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 75 }), expect.any(Function));
   });
 
   test('should pass submitForSettlement: true in options', async () => {
@@ -297,6 +314,7 @@ describe('brainTreePaymentController', () => {
   test('should handle single item cart', async () => {
     const singleCart = [{ _id: 'p1', price: 15.5 }];
     req = makeReq({ nonce: validNonce, cart: singleCart }, fakeUser);
+    mockProductFind.mockResolvedValue([{ _id: 'p1', price: 15.5 }]);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
@@ -401,35 +419,50 @@ describe('brainTreePaymentController', () => {
   });
 
   // ── Price validation issues [BUG-4] ────────────────────────────────────
-  test('should send negative total to Braintree when cart has negative prices [BUG-4]', async () => {
+  test('should use DB prices even when client sends negative prices [BUG-4 FIXED]', async () => {
     const negativeCart = [
       { _id: 'p1', price: -50 },
       { _id: 'p2', price: 10 },
     ];
     req = makeReq({ nonce: validNonce, cart: negativeCart }, fakeUser);
+    // DB has correct positive prices
+    mockProductFind.mockResolvedValue([
+      { _id: 'p1', price: 50 },
+      { _id: 'p2', price: 10 },
+    ]);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
 
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: -40 }), expect.any(Function));
+    // Total should use DB prices (50+10=60), not client-supplied negative prices
+    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 60 }), expect.any(Function));
   });
 
-  test('should default undefined price to 0 via Number() guard [BUG-4 FIXED]', async () => {
+  test('should use DB prices even when client omits price field [BUG-4 FIXED]', async () => {
     const badCart = [{ _id: 'p1', price: 10 }, { _id: 'p2' }];
     req = makeReq({ nonce: validNonce, cart: badCart }, fakeUser);
+    mockProductFind.mockResolvedValue([
+      { _id: 'p1', price: 10 },
+      { _id: 'p2', price: 20 },
+    ]);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
 
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 10 }), expect.any(Function));
+    // Total from DB prices: 10+20=30
+    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 30 }), expect.any(Function));
   });
 
-  test('should convert string prices to numbers via Number() [BUG-4 FIXED]', async () => {
+  test('should use DB prices even when client sends string prices [BUG-4 FIXED]', async () => {
     const stringCart = [
       { _id: 'p1', price: '10' },
       { _id: 'p2', price: '20' },
     ];
     req = makeReq({ nonce: validNonce, cart: stringCart }, fakeUser);
+    mockProductFind.mockResolvedValue([
+      { _id: 'p1', price: 10 },
+      { _id: 'p2', price: 20 },
+    ]);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
@@ -438,14 +471,17 @@ describe('brainTreePaymentController', () => {
   });
 
   // ── Price manipulation (SEC-2) ─────────────────────────────────────────
-  test('should accept tampered prices without server-side verification [SEC-2]', async () => {
+  test('should use DB price instead of tampered client price [SEC-2 FIXED]', async () => {
     const tamperedCart = [{ _id: 'expensive-item', name: 'Laptop', price: 0.01 }];
     req = makeReq({ nonce: validNonce, cart: tamperedCart }, fakeUser);
+    // DB has the real price
+    mockProductFind.mockResolvedValue([{ _id: 'expensive-item', name: 'Laptop', price: 999.99 }]);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
 
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 0.01 }), expect.any(Function));
+    // Should charge DB price (999.99), not the tampered price (0.01)
+    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 999.99 }), expect.any(Function));
     expect(res.json).toHaveBeenCalledWith({ ok: true });
   });
 
@@ -511,8 +547,8 @@ describe('brainTreePaymentController', () => {
     consoleSpy.mockRestore();
   });
 
-  // ── Products stored as full objects instead of ObjectIds (BUG-7) ───────
-  test('should store full cart objects in order, not ObjectIds [BUG-7]', async () => {
+  // ── Products stored as IDs instead of full objects (BUG-7 FIXED) ───────
+  test('should store product IDs in order, not full cart objects [BUG-7 FIXED]', async () => {
     const fakeResult = { success: true, transaction: {} };
     mockSale.mockImplementation((opts, cb) => cb(null, fakeResult));
 
@@ -520,7 +556,7 @@ describe('brainTreePaymentController', () => {
 
     expect(orderModel).toHaveBeenCalledWith(
       expect.objectContaining({
-        products: validCart,
+        products: ['prod1', 'prod2'],
       }),
     );
   });
@@ -553,6 +589,9 @@ describe('brainTreePaymentController', () => {
       price: 1.0,
     }));
     req = makeReq({ nonce: validNonce, cart: largeCart }, fakeUser);
+    mockProductFind.mockResolvedValue(
+      Array.from({ length: 100 }, (_, i) => ({ _id: `p${i}`, price: 1.0 })),
+    );
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
@@ -567,6 +606,10 @@ describe('brainTreePaymentController', () => {
       { _id: 'p2', price: 0.2 },
     ];
     req = makeReq({ nonce: validNonce, cart: floatCart }, fakeUser);
+    mockProductFind.mockResolvedValue([
+      { _id: 'p1', price: 0.1 },
+      { _id: 'p2', price: 0.2 },
+    ]);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
@@ -607,6 +650,10 @@ describe('brainTreePaymentController', () => {
       { _id: 'p2', price: 0 },
     ];
     req = makeReq({ nonce: validNonce, cart: freeCart }, fakeUser);
+    mockProductFind.mockResolvedValue([
+      { _id: 'p1', price: 0 },
+      { _id: 'p2', price: 0 },
+    ]);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: {} }));
 
     await brainTreePaymentController(req, res);
@@ -639,6 +686,7 @@ describe('Payment flow integration', () => {
     const paymentRes = makeRes();
     const cart = [{ _id: 'prod1', price: 99.99 }];
     const paymentReq = makeReq({ nonce: 'real-nonce-from-dropin', cart }, fakeUser);
+    mockProductFind.mockResolvedValue([{ _id: 'prod1', price: 99.99 }]);
     mockSale.mockImplementation((opts, cb) => cb(null, { success: true, transaction: { id: 'txn_integration' } }));
 
     await brainTreePaymentController(paymentReq, paymentRes);
@@ -646,7 +694,7 @@ describe('Payment flow integration', () => {
     expect(paymentRes.json).toHaveBeenCalledWith({ ok: true });
     expect(orderModel).toHaveBeenCalledWith(
       expect.objectContaining({
-        products: cart,
+        products: ['prod1'],
         buyer: 'integration-user',
       }),
     );
@@ -661,6 +709,7 @@ describe('Payment flow integration', () => {
     const paymentRes = makeRes();
     const paymentError = new Error('Card declined');
     mockSale.mockImplementation((opts, cb) => cb(paymentError, null));
+    mockProductFind.mockResolvedValue([{ _id: 'p1', price: 10 }]);
 
     await brainTreePaymentController(
       makeReq({ nonce: 'nonce', cart: [{ _id: 'p1', price: 10 }] }, fakeUser),
@@ -704,6 +753,7 @@ describe('Payment flow integration', () => {
     mockSale.mockImplementation(() => {
       throw connError;
     });
+    mockProductFind.mockResolvedValue([{ _id: 'p1', price: 10 }]);
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
     await brainTreePaymentController(
