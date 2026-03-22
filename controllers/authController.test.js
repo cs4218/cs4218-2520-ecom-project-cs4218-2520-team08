@@ -2398,7 +2398,7 @@ describe("authController", () => {
       expect(orderModel.find).toHaveBeenCalledWith({});
       expect(query.populate).toHaveBeenNthCalledWith(1, "products", "-photo");
       expect(query.populate).toHaveBeenNthCalledWith(2, "buyer", "name");
-      expect(query.sort).toHaveBeenCalledWith({ createdAt: "-1" });
+      expect(query.sort).toHaveBeenCalledWith({ createdAt: -1 });
       expect(res.json).toHaveBeenCalledWith(orders);
     });
 
