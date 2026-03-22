@@ -56,7 +56,7 @@ afterAll(async () => {
   await closeDatabase();
 });
 
-// Lee Seng Kitt
+// Lee Seng Kitt A0252087A
 describe('Backend Integration: Category & Payment Controllers', () => {
   // ─── Test 1 ────────────────────────────────────────────────────────────────
   describe('Get all categories from real DB', () => {
@@ -158,10 +158,7 @@ describe('Backend Integration: Category & Payment Controllers', () => {
       const req = makeReq({
         body: {
           nonce: 'fake-nonce',
-          cart: [
-            { _id: product1._id },
-            { _id: product2._id },
-          ],
+          cart: [{ _id: product1._id }, { _id: product2._id }],
         },
         user: { _id: user._id },
       });
@@ -201,10 +198,7 @@ describe('Backend Integration: Category & Payment Controllers', () => {
       const req = makeReq({
         body: {
           nonce: 'fake-nonce',
-          cart: [
-            { _id: product1._id },
-            { _id: fakeId },
-          ],
+          cart: [{ _id: product1._id }, { _id: fakeId }],
         },
         user: { _id: user._id },
       });

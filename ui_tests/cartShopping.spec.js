@@ -25,6 +25,7 @@ async function loginViaUI(page) {
   await expect(page.locator('.navbar').getByText(TEST_USER.name)).toBeVisible({ timeout: 10000 });
 }
 
+// Lee Seng Kitt A0252087A
 test.describe('Cart Management and Category Shopping', () => {
   // Register the test user once before all tests in the suite
   test.beforeAll(async ({ request }) => {
@@ -275,7 +276,9 @@ test.describe('Cart Management and Category Shopping', () => {
     await page.locator('.category .card').first().waitFor({ timeout: 10000 });
 
     // Capture the first product's name and add it to cart
-    const firstProductName = (await page.locator('.category .card').first().locator('.card-title').first().textContent()).trim();
+    const firstProductName = (
+      await page.locator('.category .card').first().locator('.card-title').first().textContent()
+    ).trim();
     await page.locator('.category .card').first().getByRole('button', { name: 'ADD TO CART' }).click();
     await page.waitForTimeout(500);
 
@@ -290,7 +293,9 @@ test.describe('Cart Management and Category Shopping', () => {
     await page.locator('.category .card').first().waitFor({ timeout: 10000 });
 
     // Capture the second product's name and add it to cart
-    const secondProductName = (await page.locator('.category .card').first().locator('.card-title').first().textContent()).trim();
+    const secondProductName = (
+      await page.locator('.category .card').first().locator('.card-title').first().textContent()
+    ).trim();
     await page.locator('.category .card').first().getByRole('button', { name: 'ADD TO CART' }).click();
     await page.waitForTimeout(500);
 
@@ -374,7 +379,11 @@ test.describe('Cart Management and Category Shopping', () => {
     await expect(page.locator('.cart-page').getByText(capturedName, { exact: true })).toBeVisible();
 
     // Verify the product price in the cart matches what was shown on the details page
-    const cartPriceText = await page.locator('.cart-page .col-md-4 p').filter({ hasText: /Price/ }).first().textContent();
+    const cartPriceText = await page
+      .locator('.cart-page .col-md-4 p')
+      .filter({ hasText: /Price/ })
+      .first()
+      .textContent();
     expect(cartPriceText).toContain(capturedPrice);
   });
 
