@@ -174,7 +174,7 @@ afterEach(() => {
   consoleLogSpy.mockRestore();
 });
 
-// Lee Seng Kitt
+// Lee Seng Kitt A0252087A
 describe('Frontend Integration: Categories, Cart & HomePage', () => {
   // ─── Test 5 ──────────────────────────────────────────────────────────────
   describe('HomePage category filters + product display', () => {
