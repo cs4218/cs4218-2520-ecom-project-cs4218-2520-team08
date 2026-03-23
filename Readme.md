@@ -68,6 +68,50 @@
 
 #### Yeo Zi Yi (A0266292X)
 
+**Integration Tests**
+
+- `integration-tests/backend/ordersProfile.integration.test.js`
+- `integration-tests/frontend/search_profile_orders.integration.test.js`
+
+**Backend (`ordersProfile.integration.test.js`)** — real MongoDB via `integration-tests/backend/helpers/testDb.js`; exercises `orderModel`, `userModel`, `productModel`, `categoryModel`, `hashPassword`, and `comparePassword` together with the listed controllers.
+
+| # | Test | Modules integrated | Description |
+|---|------|--------------------|-------------|
+| 1 | Profile update persists | `updateProfileController`, `userModel`, `hashPassword`, `comparePassword` | Create a user, call `updateProfileController` with new name, phone, and password. Assert HTTP 200 payload, MongoDB fields updated, password stored as bcrypt, and `comparePassword` succeeds for the new password and fails for the old one. |
+| 2 | Get orders with populated data | `getOrdersController`, `orderModel`, `userModel`, `productModel` | Create an order with two products (including photo buffers). Call `getOrdersController` as the buyer. Assert JSON array length, populated `buyer.name`, product names, and that serialized products omit `photo`. |
+| 3 | Get all orders (admin) sorted | `getAllOrdersController`, `orderModel`, `userModel`, `productModel` | Create three orders with staggered timestamps. Call `getAllOrdersController`. Assert newest-first order of IDs, populated buyer names and product names, and no `photo` on products in the response. |
+| 4 | Order status update persists | `orderStatusController`, `orderModel` | Create an order with status `Not Process`. Call `orderStatusController` with `Shipped`. Assert response JSON and MongoDB document both show `Shipped`. |
+| 5 | Buyer order isolation | `getOrdersController`, `orderModel`, `userModel`, `productModel` | Create two users and three orders (two for user A, one for user B). Call `getOrdersController` as user A. Assert only A’s order IDs appear in the response. |
+
+**Frontend (`search_profile_orders.integration.test.js`)** — React Testing Library with `MemoryRouter`, `AuthProvider`, `CartProvider`, `SearchProvider`; axios mocked for API boundaries.
+
+| # | Test | Modules integrated | Description |
+|---|------|--------------------|-------------|
+| 1 | Search submits and shows results | `SearchInput`, `SearchProvider`, `Search`, `Layout`, axios | Render `Layout` with `SearchInput`, type a keyword, submit. Assert `GET /api/v1/product/search/:keyword` and that result product names appear (shared context drives `Search` route). |
+| 2 | Profile update and persistence | `Profile`, `AuthProvider`, axios, `react-hot-toast` | Pre-seed `localStorage` auth, render `Profile`, change name/phone/address, submit. Assert `PUT /api/v1/auth/profile` payload, success toast, and updated user in `localStorage`. |
+| 3 | Orders list UI | `Orders`, `AuthProvider`, axios | Mock `GET /api/v1/auth/orders` with a populated order. Assert table fields (status, buyer, payment, product row, image `src`, price text, relative date). |
+| 4 | Search result cards | `SearchInput`, `Search`, `SearchProvider`, `AuthProvider`, `CartProvider`, axios | Submit search from `/`, assert card shows name, truncated description, price, and **More Details** / **ADD TO CART** buttons. |
+| 5 | Layout wraps content | `Layout`, `Header`, `Footer`, providers | Render `Layout` with child text; assert **Virtual Vault**, child content, and **All Rights Reserved** footer. |
+
+**UI Tests**
+
+- `ui_tests/searchAndOrders.spec.js`
+
+Run UI tests (Playwright): `npm run test:ui`  
+Requires app reachable at the Playwright `baseURL` (default `http://localhost:3000`), API proxied to the backend, and `MONGO_URL` in `.env` for seeding test users, admin role, and a sample order.
+
+| # | Test | Pages / components traversed | Description |
+|---|------|-------------------------------|-------------|
+| 1 | Profile structure and field update | `/login` → `/dashboard/user/profile` | Log in as seeded buyer. Assert document title **Your Profile**, form fields including disabled email, footer; update name/phone/address; assert success toast and navbar name. |
+| 2 | Dashboard UserMenu | `/dashboard/user` | Assert **Profile** and **Orders** links in the user sidebar. |
+| 3 | Orders via UserMenu + `getOrders` | `/dashboard/user` → `/dashboard/user/orders` | Wait for `GET /api/v1/auth/orders`. Assert **Your Orders** title, table headers, status **Not Process**, payment **Success**, quantity **1**, and seeded product name in the line items. |
+| 4 | Profile password rotation | `/dashboard/user/profile`, `/login` | `PUT /api/v1/auth/profile` with new password; logout; log in again with the new password (covers `updateProfile` password hashing end-to-end). |
+| 5 | Header search → results | `/` → `/search` | Assert `form[role="search"]`, `GET /api/v1/product/search/...`, document title **Search results**, heading and **Found N**, product cards. |
+| 6 | Search empty API result | `/` → `/search` | Search with a nonsense keyword; assert **No Products Found**. |
+| 7 | Cold `/search` route | `/search` | With default empty search context, assert **Search Resuts** heading and **No Products Found**. |
+| 8 | Admin Users page | `/login` → `/dashboard/admin/users` | Wait for `admin-auth`; assert **All Users**, page title, and **AdminMenu** links (Create Category, Products, Orders). |
+| 9 | Non-admin blocked from admin URL | `/dashboard/admin/users` → `/login` | Logged-in buyer opens admin users URL; assert spinner copy and redirect to login. |
+
 ---
 
 #### Keagan Pang Zhong Hon (A0258729L)
