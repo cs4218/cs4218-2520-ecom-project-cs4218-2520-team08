@@ -155,7 +155,49 @@ Requires app reachable at the Playwright `baseURL` (default `http://localhost:30
 
 ---
 
-#### Lee Seng Kitt
+#### Lee Seng Kitt (A0252087A)
+
+**Integration Tests**
+
+- `integration-tests/backend/categoryPaymentController.integration.test.js`
+- `integration-tests/frontend/categoryCartHomepage.integration.test.js`
+
+**Backend (`categoryPaymentController.integration.test.js`)** — real MongoDB via `integration-tests/backend/helpers/testDb.js`; exercises `categoryModel`, `productModel`, `orderModel`, `userModel`, and `braintree` (mocked SDK) together with the listed controllers.
+
+| # | Test | Modules Integrated | Description |
+|---|------|--------------------|-------------|
+| 1 | Get all categories from real DB | `categoryControlller`, `categoryModel` | Insert 3 categories with mixed-case slugs into MongoDB. Call `categoryControlller`. Verify HTTP 200, success flag, all 3 categories returned with correct names, and that Mongoose's `lowercase: true` transform lowercases the slugs. |
+| 2 | Get single category by slug | `singleCategoryController`, `categoryModel` | Create a category, call `singleCategoryController` with its slug. Verify the correct category is returned with matching name and slug. Also verifies a 404 response with `success: false` for a non-existent slug. |
+| 3 | Payment creates order with products | `brainTreePaymentController`, `orderModel`, `userModel`, `productModel`, `categoryModel`, `braintree` (mocked) | Create a buyer, a category, and two products. Call `brainTreePaymentController` with a fake nonce and cart. Verify the order document is created in MongoDB with correct buyer ID, both product IDs, payment success flag, transaction ID, and default status `Not Process`. Also verifies payment is rejected with HTTP 400 when the cart contains a non-existent product ID and no order is created. |
+| 4 | Category listing reflects live DB state | `categoryControlller`, `categoryModel` | Start with an empty DB and verify the category list is empty. Insert 3 categories and verify all appear. Delete one category and verify the list reflects the removal immediately, with only the 2 remaining categories returned. |
+
+**Frontend (`categoryCartHomepage.integration.test.js`)** — React Testing Library with `MemoryRouter`, `AuthProvider`, `CartProvider`, `SearchProvider`; axios mocked for API boundaries.
+
+| # | Test | Modules Integrated | Description |
+|---|------|--------------------|-------------|
+| 5 | HomePage category filters + product display | `HomePage`, `Layout`, `Header`, `AuthProvider`, `CartProvider`, `SearchProvider`, axios | Render HomePage with all providers. Verify category checkboxes, price radio buttons, and product cards all render. Also verifies clicking a category checkbox triggers the filter API call (`POST /product-filters`) with the correct `checked` payload, and the filtered products display. |
+| 6 | Add to cart from HomePage updates cart context | `HomePage`, `Layout`, `Header`, `CartProvider`, axios | Render HomePage. Click ADD TO CART on two products sequentially. Verify the Header badge count increments from 1 to 2. Also verifies localStorage is updated with the added product data. |
+| 7 | CartPage displays items with totals | `CartPage`, `Layout`, `Header`, `CartProvider`, `AuthProvider` | Pre-populate localStorage with 3 cart items ($10, $25.50, $49.99) and auth data. Render CartPage. Verify all items render with Remove buttons, the heading shows "3 items", the formatted total is $85.49, and the Header badge shows 3. |
+| 8 | CartPage remove item flow | `CartPage`, `Layout`, `Header`, `CartProvider`, `AuthProvider` | Pre-populate 2 items. Remove the first item. Verify it disappears, the second remains, and the heading updates to "1 item". Also verifies the total recalculates correctly, localStorage updates to contain only the remaining item, and removing all items shows "Your Cart Is Empty" with badge 0. |
+| 9 | Cart localStorage persistence | `HomePage`, `CartPage`, `Layout`, `CartProvider`, `AuthProvider`, axios | Pre-populate localStorage with 3 saved items. Render CartPage. Verify items and badge restore on mount. Also verifies cart data persists across unmount/remount cycles: add 2 items on HomePage, unmount, re-render a fresh CartPage, and verify both items and badge are still present. |
+| 10 | Categories page with useCategory hook | `Categories`, `Layout`, `Header`, `useCategory`, `AuthProvider`, `CartProvider`, `SearchProvider`, axios | Mock 4 categories. Render Categories page. Verify all 4 render as links with correct `/category/:slug` href patterns. Also verifies Layout renders Header ("Virtual Vault") and Footer ("All Rights Reserved") correctly. |
+
+**UI Tests**
+
+- `ui_tests/cartShopping.spec.js`
+
+| # | Test | Pages / Components Traversed | Description |
+|---|------|-------------------------------|-------------|
+| 1 | Multi-Item Cart → Remove Item → Verify Total | HomePage, CartPage | Add 2 products from the homepage, capturing their names and prices. Navigate to the cart. Verify both items display with correct names and prices, and the total equals their sum. Remove the first item. Verify it disappears, the second remains, and the total updates to the second item's price. |
+| 2 | Cart Persistence Across Navigation | HomePage, Categories, About, CartPage | Add a product from the homepage. Verify the cart badge shows 1. Navigate to `/categories`, then `/about` — verify the badge persists at 1 on every page. Navigate to the cart and verify the product is still listed. |
+| 3 | Add Items from Different Pages | HomePage, ProductDetails, CategoryProduct, CartPage | Add a product from the homepage. Click "More Details" on a second product and add from the product details page. Navigate to a category page via the Categories dropdown and add a third product. Verify the cart badge shows 3 and all 3 items appear on the cart page. |
+| 4 | Guest Cart Experience | HomePage, CartPage | As an unauthenticated guest, add a product and navigate to the cart. Verify the greeting says "Hello Guest", the "please login to checkout" message appears, the "Plase Login to checkout" button is visible, no payment section is shown, and the item displays with a Remove button. |
+| 5 | Cart Item Count Accuracy | HomePage, CartPage | Add the same product 3 times from the homepage. Verify the badge shows 3. Navigate to the cart. Verify 3 item cards display and the total is 3× the single price. Remove one item. Verify the badge drops to 2 and the total updates to 2× the price. |
+| 6 | Categories Page → Shop Multiple Categories | Categories, CategoryProduct, CartPage | Navigate to `/categories`. Click the first category, add a product to the cart. Go back to `/categories`, click a different category, add another product. Navigate to the cart. Verify both items are present, each from a different category. |
+| 7 | Empty Cart State | CartPage | Navigate directly to `/cart` with an empty cart. Verify the "Your Cart Is Empty" message is shown and the total displays $0.00. |
+| 8 | Cart to Login Flow (Guest) | HomePage, CartPage, Login | As a guest, add a product and navigate to the cart. Click the "Plase Login to checkout" button. Verify the browser navigates to `/login`. |
+| 9 | Add to Cart from Product Details → Verify in Cart | HomePage, ProductDetails, CartPage | Click "More Details" on a homepage product. Extract the product name and price from the details page. Click "ADD TO CART". Navigate to the cart. Verify the product appears with the exact same name and price as shown on the details page. |
+| 10 | Cart Badge Reflects Adds from Category Pages | Header, CategoryProduct, CartPage | Navigate to a category page via the Categories dropdown, finding a category with at least 2 products. Add the first product — verify badge shows 1. Add the second — verify badge shows 2. Navigate to the cart and verify both items are listed. |
 
 ---
 
