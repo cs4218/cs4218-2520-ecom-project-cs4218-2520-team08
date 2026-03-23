@@ -260,7 +260,7 @@ Requires app reachable at the Playwright `baseURL` (default `http://localhost:30
 - `components/Layout.js`
 - `components/Spinner.js`
 
-#### Lee Seng Kitt
+#### Lee Seng Kitt (A0252087A)
 
 - `controllers/categoryController.js`
   - `categoryController`
