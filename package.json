@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "ecommerce rest api",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
     "server": "nodemon server.js",
@@ -18,9 +19,9 @@
     "test:ui": "playwright test",
     "test:coverage:merge": "node scripts/merge-lcov.js",
     "test:load": "npm run test:load:product && npm run test:load:search && npm run test:load:auth",
-    "test:load:product": "node -e \"const fs=require('fs');fs.rmSync('load-tests/results/product-browsing-results.csv',{force:true});fs.rmSync('load-tests/results/product-browsing-report',{recursive:true,force:true});\" && jmeter -n -t load-tests/product-browsing.jmx -l load-tests/results/product-browsing-results.csv -e -o load-tests/results/product-browsing-report",
-    "test:load:search": "node -e \"const fs=require('fs');fs.rmSync('load-tests/results/search-filter-results.csv',{force:true});fs.rmSync('load-tests/results/search-filter-report',{recursive:true,force:true});\" && jmeter -n -t load-tests/search-filter.jmx -l load-tests/results/search-filter-results.csv -e -o load-tests/results/search-filter-report",
-    "test:load:auth": "node load-tests/cleanup-test-users.js && node -e \"const fs=require('fs');fs.rmSync('load-tests/results/authentication-results.csv',{force:true});fs.rmSync('load-tests/results/authentication-report',{recursive:true,force:true});\" && jmeter -n -t load-tests/authentication.jmx -l load-tests/results/authentication-results.csv -e -o load-tests/results/authentication-report"
+    "test:load:product": "node --input-type=commonjs -e \"const fs=require('fs');fs.rmSync('load-tests/results/product-browsing-results.csv',{force:true});fs.rmSync('load-tests/results/product-browsing-report',{recursive:true,force:true});\" && jmeter -n -t load-tests/product-browsing.jmx -l load-tests/results/product-browsing-results.csv -e -o load-tests/results/product-browsing-report",
+    "test:load:search": "node --input-type=commonjs -e \"const fs=require('fs');fs.rmSync('load-tests/results/search-filter-results.csv',{force:true});fs.rmSync('load-tests/results/search-filter-report',{recursive:true,force:true});\" && jmeter -n -t load-tests/search-filter.jmx -l load-tests/results/search-filter-results.csv -e -o load-tests/results/search-filter-report",
+    "test:load:auth": "node load-tests/cleanup-test-users.cjs && node --input-type=commonjs -e \"const fs=require('fs');fs.rmSync('load-tests/results/authentication-results.csv',{force:true});fs.rmSync('load-tests/results/authentication-report',{recursive:true,force:true});\" && jmeter -n -t load-tests/authentication.jmx -l load-tests/results/authentication-results.csv -e -o load-tests/results/authentication-report"
   },
   "keywords": [],
   "author": "RP",
