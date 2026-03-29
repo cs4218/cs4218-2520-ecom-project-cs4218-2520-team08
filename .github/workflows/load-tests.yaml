@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  load-test:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -51,7 +51,7 @@ jobs:
           echo "BRAINTREE_PRIVATE_KEY=${{ secrets.BRAINTREE_PRIVATE_KEY }}" >> .env
 
       - name: Start server
-        run: node server.js &
+        run: npm start > /tmp/server.log 2>&1 &
 
       - name: Wait for server to be ready
         run: |
@@ -60,6 +60,8 @@ jobs:
             echo "Waiting for server... ($i/30)"
             sleep 2
           done
+          echo "=== Server log ==="
+          cat /tmp/server.log
 
       - name: Seed test user for authentication load test
         run: |
