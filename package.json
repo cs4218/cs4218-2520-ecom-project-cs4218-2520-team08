@@ -16,7 +16,11 @@
     "test:integration-frontend": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.integration-frontend.config.js",
     "test:integration": "npm run test:integration-backend && npm run test:integration-frontend",
     "test:ui": "playwright test",
-    "test:coverage:merge": "node scripts/merge-lcov.js"
+    "test:coverage:merge": "node scripts/merge-lcov.js",
+    "test:load": "npm run test:load:product && npm run test:load:search && npm run test:load:auth",
+    "test:load:product": "node -e \"const fs=require('fs');fs.rmSync('load-tests/results/product-browsing-results.csv',{force:true});fs.rmSync('load-tests/results/product-browsing-report',{recursive:true,force:true});\" && jmeter -n -t load-tests/product-browsing.jmx -l load-tests/results/product-browsing-results.csv -e -o load-tests/results/product-browsing-report",
+    "test:load:search": "node -e \"const fs=require('fs');fs.rmSync('load-tests/results/search-filter-results.csv',{force:true});fs.rmSync('load-tests/results/search-filter-report',{recursive:true,force:true});\" && jmeter -n -t load-tests/search-filter.jmx -l load-tests/results/search-filter-results.csv -e -o load-tests/results/search-filter-report",
+    "test:load:auth": "node load-tests/cleanup-test-users.js && node -e \"const fs=require('fs');fs.rmSync('load-tests/results/authentication-results.csv',{force:true});fs.rmSync('load-tests/results/authentication-report',{recursive:true,force:true});\" && jmeter -n -t load-tests/authentication.jmx -l load-tests/results/authentication-results.csv -e -o load-tests/results/authentication-report"
   },
   "keywords": [],
   "author": "RP",
