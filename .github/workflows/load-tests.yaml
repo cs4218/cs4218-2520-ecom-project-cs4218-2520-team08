@@ -50,6 +50,68 @@ jobs:
           echo "BRAINTREE_PUBLIC_KEY=${{ secrets.BRAINTREE_PUBLIC_KEY }}" >> .env
           echo "BRAINTREE_PRIVATE_KEY=${{ secrets.BRAINTREE_PRIVATE_KEY }}" >> .env
 
+      - name: Seed product/category data
+        run: |
+          node <<'NODE'
+          const { MongoClient } = require("mongodb");
+
+          const uri = "mongodb://localhost:27017";
+          const dbName = "test";
+          const categorySlug = "load-test-category";
+          const productSlug = "load-test-product";
+
+          (async () => {
+            const client = new MongoClient(uri);
+            await client.connect();
+            const db = client.db(dbName);
+
+            const categories = db.collection("categories");
+            const products = db.collection("products");
+            const now = new Date();
+
+            await categories.updateOne(
+              { slug: categorySlug },
+              {
+                $set: {
+                  name: "Load Test Category",
+                  slug: categorySlug,
+                },
+              },
+              { upsert: true }
+            );
+
+            const category = await categories.findOne({ slug: categorySlug });
+
+            await products.updateOne(
+              { slug: productSlug },
+              {
+                $set: {
+                  name: "Load Test Product",
+                  slug: productSlug,
+                  description: "Seed product for CI load tests",
+                  price: 19.9,
+                  category: category._id,
+                  quantity: 1000,
+                  shipping: true,
+                  photo: {
+                    data: Buffer.from("ci-load-test-photo"),
+                    contentType: "image/jpeg",
+                  },
+                  createdAt: now,
+                  updatedAt: now,
+                },
+              },
+              { upsert: true }
+            );
+
+            console.log("Seeded load-test category/product");
+            await client.close();
+          })().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          NODE
+
       - name: Start server
         run: node --experimental-default-type=module server.js > /tmp/server.log 2>&1 &
 
