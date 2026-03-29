@@ -77,9 +77,6 @@ jobs:
               "answer": "password is cs4218@test.com"
             }'
 
-      - name: Seed test data for load tests
-        run: node load-tests/seed-test-data.cjs
-
       - name: Create results directory
         run: mkdir -p load-tests/results
 
