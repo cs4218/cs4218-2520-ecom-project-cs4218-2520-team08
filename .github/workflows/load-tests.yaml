@@ -51,7 +51,7 @@ jobs:
           echo "BRAINTREE_PRIVATE_KEY=${{ secrets.BRAINTREE_PRIVATE_KEY }}" >> .env
 
       - name: Start server
-        run: npm start > /tmp/server.log 2>&1 &
+        run: node --experimental-default-type=module server.js > /tmp/server.log 2>&1 &
 
       - name: Wait for server to be ready
         run: |
