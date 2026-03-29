@@ -42,15 +42,13 @@ jobs:
 
       - name: Create .env file
         run: |
-          cat > .env << 'EOF'
-          PORT=6060
-          DEV_MODE=development
-          MONGO_URL=mongodb://localhost:27017
-          JWT_SECRET=test-jwt-secret-for-load-testing
-          BRAINTREE_MERCHANT_ID=${{ secrets.BRAINTREE_MERCHANT_ID }}
-          BRAINTREE_PUBLIC_KEY=${{ secrets.BRAINTREE_PUBLIC_KEY }}
-          BRAINTREE_PRIVATE_KEY=${{ secrets.BRAINTREE_PRIVATE_KEY }}
-          EOF
+          echo "PORT=6060" > .env
+          echo "DEV_MODE=development" >> .env
+          echo "MONGO_URL=mongodb://localhost:27017" >> .env
+          echo "JWT_SECRET=test-jwt-secret-for-load-testing" >> .env
+          echo "BRAINTREE_MERCHANT_ID=${{ secrets.BRAINTREE_MERCHANT_ID }}" >> .env
+          echo "BRAINTREE_PUBLIC_KEY=${{ secrets.BRAINTREE_PUBLIC_KEY }}" >> .env
+          echo "BRAINTREE_PRIVATE_KEY=${{ secrets.BRAINTREE_PRIVATE_KEY }}" >> .env
 
       - name: Start server
         run: node server.js &
