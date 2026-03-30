@@ -1,0 +1,160 @@
+name: Load Tests (JMeter)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Setup Java (required for JMeter)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install JMeter 5.6.3
+        run: |
+          wget -q https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
+          tar -xzf apache-jmeter-5.6.3.tgz
+          echo "$GITHUB_WORKSPACE/apache-jmeter-5.6.3/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.11.0
+        with:
+          mongodb-version: '6.0'
+
+      - name: Create .env file
+        run: |
+          echo "PORT=6060" > .env
+          echo "DEV_MODE=development" >> .env
+          echo "MONGO_URL=mongodb://localhost:27017" >> .env
+          echo "JWT_SECRET=test-jwt-secret-for-load-testing" >> .env
+          echo "BRAINTREE_MERCHANT_ID=${{ secrets.BRAINTREE_MERCHANT_ID }}" >> .env
+          echo "BRAINTREE_PUBLIC_KEY=${{ secrets.BRAINTREE_PUBLIC_KEY }}" >> .env
+          echo "BRAINTREE_PRIVATE_KEY=${{ secrets.BRAINTREE_PRIVATE_KEY }}" >> .env
+
+      - name: Seed product/category data
+        run: |
+          node <<'NODE'
+          const { MongoClient } = require("mongodb");
+
+          const uri = "mongodb://localhost:27017";
+          const dbName = "test";
+          const categorySlug = "load-test-category";
+          const productSlug = "load-test-product";
+
+          (async () => {
+            const client = new MongoClient(uri);
+            await client.connect();
+            const db = client.db(dbName);
+
+            const categories = db.collection("categories");
+            const products = db.collection("products");
+            const now = new Date();
+
+            await categories.updateOne(
+              { slug: categorySlug },
+              {
+                $set: {
+                  name: "Load Test Category",
+                  slug: categorySlug,
+                },
+              },
+              { upsert: true }
+            );
+
+            const category = await categories.findOne({ slug: categorySlug });
+
+            await products.updateOne(
+              { slug: productSlug },
+              {
+                $set: {
+                  name: "Load Test Product",
+                  slug: productSlug,
+                  description: "Seed product for CI load tests",
+                  price: 19.9,
+                  category: category._id,
+                  quantity: 1000,
+                  shipping: true,
+                  photo: {
+                    data: Buffer.from("ci-load-test-photo"),
+                    contentType: "image/jpeg",
+                  },
+                  createdAt: now,
+                  updatedAt: now,
+                },
+              },
+              { upsert: true }
+            );
+
+            console.log("Seeded load-test category/product");
+            await client.close();
+          })().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Start server
+        run: node --experimental-default-type=module server.js > /tmp/server.log 2>&1 &
+
+      - name: Wait for server to be ready
+        run: |
+          for i in {1..30}; do
+            curl -s http://localhost:6060 && echo "Server ready" && break
+            echo "Waiting for server... ($i/30)"
+            sleep 2
+          done
+          echo "=== Server log ==="
+          cat /tmp/server.log
+
+      - name: Seed test user for authentication load test
+        run: |
+          curl -s -X POST http://localhost:6060/api/v1/auth/register \
+            -H "Content-Type: application/json" \
+            -d '{
+              "name": "Load Test User",
+              "email": "cs4218@test.com",
+              "password": "cs4218@test.com",
+              "phone": "91234567",
+              "address": "123 Test Street",
+              "DOB": "1995-01-01",
+              "answer": "password is cs4218@test.com"
+            }'
+
+      - name: Create results directory
+        run: mkdir -p load-tests/results
+
+      - name: Run product browsing load test
+        run: npm run test:load:product
+
+      - name: Run search and filter load test
+        run: npm run test:load:search
+
+      - name: Run authentication load test
+        run: npm run test:load:auth
+
+      - name: Upload load test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-test-reports
+          path: load-tests/results/
+          retention-days: 7

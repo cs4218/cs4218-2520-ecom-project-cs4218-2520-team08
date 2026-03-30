@@ -4,11 +4,76 @@
 
 [![Integration Tests (Jest)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/integration-tests.yaml/badge.svg)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/integration-tests.yaml)
 
+[![Load Tests (JMeter)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/load-tests.yaml/badge.svg)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/load-tests.yaml)
+
 ## Milestone 1 CI Run
 
 [Milestone 1 CI Run](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/runs/22277019646)
 
 ## Workload Distribution
+
+### Milestone 3 Performance Testing
+
+#### Tsui Yi Wern (A0266070J)
+
+**Load Tests**
+
+- `load-tests/authentication.jmx`
+- `load-tests/product-browsing.jmx`
+- `load-tests/search-filter.jmx`
+
+Implemented JMeter load tests across 3 test plans and 9 thread groups covering the most performance-critical API flows. Each thread group starts with 0 concurrent users and linearly ramps up to peak load over `ramp_time` seconds, then holds at peak for a further 120 seconds. This progressive ramp-up (equivalent to 10 → 50 → 100+ users over time) reveals the exact point at which response times degrade, throughput plateaus, or errors begin to appear — identifying bottlenecks before the system reaches failure.
+
+| Thread Group | Peak Users | Ramp-up (s) | Hold at peak (s) | Total duration (s) |
+|---|---|---|---|---|
+| Paginated Product Listing | 300 | 180 | 120 | 300 |
+| Single Product View | 250 | 150 | 120 | 270 |
+| Related Products | 250 | 150 | 120 | 270 |
+| Keyword Search | 200 | 120 | 120 | 240 |
+| Filter by Price Range | 180 | 120 | 120 | 240 |
+| Search then Filter | 150 | 90 | 120 | 210 |
+| User Login | 75 | 60 | 90 | 150 |
+| User Registration | 50 | 45 | 75 | 120 |
+| Authenticated User Flow | 40 | 30 | 90 | 120 |
+
+| Test Plan | Thread Group | Peak Concurrent Users | Ramp-up | Reason for Load Number | What is tested |
+|---|---|---|---|---|---|
+| `product-browsing.jmx` | Paginated Product Listing | 300 | 0 → 300 over 180s | Browsing is the most common activity — most visitors never log in; 300 concurrent users reflects the dominant baseline of anonymous + authenticated shoppers hitting the product list at peak. Set at ~6× registration load (300 vs 50) since browse traffic vastly exceeds sign-up traffic — most visitors never register. | Paginated listing across pages 1 and 2 (`/product-list/:page`) |
+| `product-browsing.jmx` | Single Product View | 250 | 0 → 250 over 150s | A large proportion of listing visitors click into a product detail page; 250 is 50 less than listing load, reflecting slight drop-off from list to detail view. Still far above all auth flows since browsing precedes authentication. | Product detail + photo retrieval (binary data from MongoDB — heaviest endpoint) |
+| `product-browsing.jmx` | Related Products | 250 | 0 → 250 over 150s | Users who view a product detail page also see related products inline; set equal to Single Product View since they are loaded on the same page visit. | Related products query by product ID and category ID |
+| `search-filter.jmx` | Keyword Search | 200 | 0 → 200 over 120s | Search is heavily used by active shoppers; 200 reflects the majority of browsing users who enter a keyword at some point. Lower than direct browse (300) because not all users search. | Keyword search via `/search/:keyword` with CSV-rotated keywords |
+| `search-filter.jmx` | Filter by Price Range | 180 | 0 → 180 over 120s | Price filtering is common after search; 180 is slightly below keyword search since it requires an extra deliberate interaction. | `POST /product-filters` across $0–$19, $20–$39, $40–$59, $60+ |
+| `search-filter.jmx` | Search then Filter | 150 | 0 → 150 over 90s | Combined search+filter is a realistic full browsing flow; 150 represents users who refine results after an initial search, a subset of both groups above. | Sequential search → price filter to simulate real browsing behaviour |
+| `authentication.jmx` | User Login | 75 | 0 → 75 over 60s | Login is the most frequent auth action; 75 concurrent sessions reflects ~25% of the peak browsing load (300), representing users who transition from anonymous browsing to authenticated sessions during peak hours. Set as the highest auth flow since login is a prerequisite for all other auth actions. | Login throughput under concurrent load; asserts HTTP 200 |
+| `authentication.jmx` | User Registration | 50 | 0 → 50 over 45s | Registration spikes occur at launch or promotion events; 50 simultaneous sign-ups is ~67% of the login load since users log in far more often than they register. Represents a realistic peak burst for a growing ecommerce app. Each thread uses a unique email from a pre-generated CSV to avoid duplicate registration conflicts. | 50 concurrent registrations using CSV-driven unique users |
+| `authentication.jmx` | Authenticated User Flow | 40 | 0 → 40 over 30s | Fewer users proceed past login to navigate protected routes; 40 is ~53% of the login load, reflecting the subset of authenticated users who actively check order history. Lower than login since not all logged-in users visit the orders page. | Full flow — login → JWT capture → `/user-auth` → `/orders` |
+
+**Run instructions** (requires [Apache JMeter 5.6.3](https://jmeter.apache.org/) on PATH and server running on port 6060):
+```bash
+npm run test:load:product   # product browsing
+npm run test:load:search    # search & filter
+npm run test:load:auth      # authentication
+npm run test:load           # all three
+```
+HTML reports will be generated at `load-tests/results/<test-name>-report/index.html`, not committed in this repository.
+
+**CI:** [Load Tests (JMeter)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/load-tests.yaml)
+
+---
+
+#### Yeo Zi Yi (A0266292X)
+
+---
+
+#### Keagan Pang Zhong Hon (A0258729L)
+
+---
+
+#### Lee Seng Kitt (A0252087A)
+
+---
+
+#### Kamat Shivangi Prashant (A0319665R)
 
 ### Milestone 2 Integration & UI Tests
 
