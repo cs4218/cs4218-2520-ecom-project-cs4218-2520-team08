@@ -8,3 +8,6 @@ coverage/
 .scannerwork/
 playwright-report/
 .playwright-mcp/
+jmeter.log
+stress-tests/results/
+load-tests/results/
