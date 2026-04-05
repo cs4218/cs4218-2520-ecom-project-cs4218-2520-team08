@@ -1,3 +1,5 @@
+// Keagan Pang, A0258729L
+
 require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
