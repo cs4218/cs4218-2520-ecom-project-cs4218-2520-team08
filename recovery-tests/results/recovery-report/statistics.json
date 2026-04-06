@@ -1,0 +1,50 @@
+{
+  "Total" : {
+    "transaction" : "Total",
+    "sampleCount" : 780,
+    "errorCount" : 130,
+    "errorPct" : 16.666666,
+    "meanResTime" : 241.5461538461536,
+    "medianResTime" : 208.0,
+    "minResTime" : 0.0,
+    "maxResTime" : 5100.0,
+    "pct1ResTime" : 237.0,
+    "pct2ResTime" : 278.94999999999993,
+    "pct3ResTime" : 2584.3799999999883,
+    "throughput" : 13.096697281595782,
+    "receivedKBytesPerSec" : 8.542253245840119,
+    "sentKBytesPerSec" : 1.532408029282872
+  },
+  "Simulate Crash" : {
+    "transaction" : "Simulate Crash",
+    "sampleCount" : 1,
+    "errorCount" : 0,
+    "errorPct" : 0.0,
+    "meanResTime" : 5100.0,
+    "medianResTime" : 5100.0,
+    "minResTime" : 5100.0,
+    "maxResTime" : 5100.0,
+    "pct1ResTime" : 5100.0,
+    "pct2ResTime" : 5100.0,
+    "pct3ResTime" : 5100.0,
+    "throughput" : 0.19607843137254902,
+    "receivedKBytesPerSec" : 0.05438112745098039,
+    "sentKBytesPerSec" : 0.0
+  },
+  "GET Product Count" : {
+    "transaction" : "GET Product Count",
+    "sampleCount" : 779,
+    "errorCount" : 130,
+    "errorPct" : 16.68806,
+    "meanResTime" : 235.30937098844666,
+    "medianResTime" : 208.0,
+    "minResTime" : 0.0,
+    "maxResTime" : 4012.0,
+    "pct1ResTime" : 237.0,
+    "pct2ResTime" : 278.0,
+    "pct3ResTime" : 2527.6000000000013,
+    "throughput" : 13.079906644055274,
+    "receivedKBytesPerSec" : 8.537596467459744,
+    "sentKBytesPerSec" : 1.532408029282872
+  }
+}
