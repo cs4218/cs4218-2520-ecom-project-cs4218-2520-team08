@@ -67,6 +67,63 @@ HTML reports will be generated at `load-tests/results/<test-name>-report/index.h
 
 #### Keagan Pang Zhong Hon (A0258729L)
 
+**Stress Tests**
+
+- `stress-tests/authentication-stress.jmx`
+- `stress-tests/product-browsing-stress.jmx`
+- `stress-tests/search-filter-stress.jmx`
+- `stress-tests/category-stress.jmx`
+
+Implemented JMeter stress tests across 4 test plans and 16 thread groups that push the server **2–5× beyond load-test peaks** to find breaking points, observe degradation, and verify recovery. Each plan uses two stress patterns: *sustained stress* (aggressive ramp-up to 2–4× the load-test peak, held for 120–180 s) and *spike stress* (flash-crowd burst to 4–6.7× the load-test peak over 5–10 s, held for 60 s). Think time is halved to 500 ms and CSV data files are recycled (`recycle=true`) so threads exceeding the row count wrap around, intentionally triggering duplicate-registration errors to stress error-handling paths.
+
+| Thread Group | Peak Users | Ramp-up (s) | Hold at peak (s) | Total duration (s) | Pattern |
+|---|---|---|---|---|---|
+| Login Stress | 300 | 30 | 180 | 210 | Sustained |
+| Login Spike | 500 | 5 | 60 | 65 | Spike |
+| Registration Stress | 200 | 20 | 120 | 140 | Sustained |
+| Auth Flow Stress | 150 | 20 | 120 | 140 | Sustained |
+| Forgot Password Stress | 100 | 15 | 90 | 105 | Sustained |
+| Paginated Listing Stress | 800 | 60 | 180 | 240 | Sustained |
+| Paginated Listing Spike | 1200 | 10 | 60 | 70 | Spike |
+| Single Product + Photo Stress | 700 | 60 | 180 | 240 | Sustained |
+| Related Products Stress | 700 | 60 | 180 | 240 | Sustained |
+| Keyword Search Stress | 600 | 45 | 180 | 225 | Sustained |
+| Keyword Search Spike | 1000 | 5 | 60 | 65 | Spike |
+| Price Filter Stress | 500 | 45 | 150 | 195 | Sustained |
+| Combined Search+Filter Stress | 400 | 30 | 120 | 150 | Sustained |
+| Category Listing Stress | 500 | 30 | 120 | 150 | Sustained |
+| Single Category Stress | 400 | 30 | 120 | 150 | Sustained |
+| Category Products Stress | 400 | 30 | 120 | 150 | Sustained |
+
+| Test Plan | Thread Group | Peak Concurrent Users | Ramp-up | Reason for Load Number | What is tested |
+|---|---|---|---|---|---|
+| `authentication-stress.jmx` | Login Stress | 300 | 0 → 300 over 30s | 4× load-test peak (75). bcrypt `compare` is CPU-bound; 300 concurrent bcrypt operations are expected to saturate the Node.js event loop, inflating response times to 3–5 s. Serialized execution (`serialize_threadgroups=true`) isolates bcrypt contention per group. | `POST /api/v1/auth/login` — measures degradation curve of bcrypt-bound login |
+| `authentication-stress.jmx` | Login Spike | 500 | 0 → 500 over 5s | 6.7× load-test peak. A 5-second flash crowd of 500 simultaneous logins tests whether the server can absorb a sudden burst without crashing or timing out. | `POST /api/v1/auth/login` — spike pattern to find the bcrypt breaking point |
+| `authentication-stress.jmx` | Registration Stress | 200 | 0 → 200 over 20s | 4× load-test peak (50). Each registration calls `bcrypt.hash` (10 salt rounds). With only 50 unique CSV emails recycled across 200 threads, ~75% of requests hit duplicate-email rejection — intentionally stressing error-handling paths and measuring how fast the server rejects duplicates. | `POST /api/v1/auth/register` — bcrypt hash under concurrency + duplicate handling |
+| `authentication-stress.jmx` | Auth Flow Stress | 150 | 0 → 150 over 20s | 3.75× load-test peak (40). Chains 3 dependent requests per iteration (login → token verify → orders), tripling the effective request rate per user. Tests JWT verification and MongoDB order population with product joins under sustained concurrency. | `POST login` → `GET /user-auth` → `GET /orders` — authenticated multi-step flow |
+| `authentication-stress.jmx` | Forgot Password Stress | 100 | 0 → 100 over 15s | New coverage not in load tests. Calls `hashPassword` (bcrypt) on every request. At 100 concurrent users, measures whether the forgot-password endpoint degrades similarly to registration under CPU-bound hashing. | `POST /api/v1/auth/forgot-password` — bcrypt hash + DB update |
+| `product-browsing-stress.jmx` | Paginated Listing Stress | 800 | 0 → 800 over 60s | 2.7× load-test peak (300). Browsing is the dominant traffic pattern. At 800 concurrent users, each iteration fires 3 requests (product-count + page 1 + page 2), generating ~2400 effective concurrent DB queries to stress MongoDB cursor allocation and the connection pool. | `GET /product-count` → `GET /product-list/1` → `GET /product-list/2` |
+| `product-browsing-stress.jmx` | Paginated Listing Spike | 1200 | 0 → 1200 over 10s | 4× load-test peak. A 10-second ramp to 1200 users simulates a flash sale or viral link — the highest concurrency in the entire test suite. Tests whether MongoDB connections are exhausted and whether Express queues requests or drops them. | Same as Paginated Listing Stress — spike pattern |
+| `product-browsing-stress.jmx` | Single Product + Photo Stress | 700 | 0 → 700 over 60s | 2.8× load-test peak (250). Product photo serves binary data (potentially hundreds of KB) from MongoDB. At 700 users, total bandwidth can exceed 100 MB/s, making this the expected memory/bandwidth bottleneck. Each iteration: fetch all products → extract slug/id → fetch single product → fetch photo. | `GET /get-product` → `GET /get-product/:slug` → `GET /product-photo/:pid` |
+| `product-browsing-stress.jmx` | Related Products Stress | 700 | 0 → 700 over 60s | 2.8× load-test peak (250). The related-products query uses a category-scoped `find` with `$ne` exclusion, which cannot use a simple index. At 700 users, MongoDB's query planner and connection pool are under heavy contention. | `GET /get-product` → `GET /related-product/:pid/:cid` |
+| `search-filter-stress.jmx` | Keyword Search Stress | 600 | 0 → 600 over 45s | 3× load-test peak (200). Search uses `$regex` on `name` and `description` — regex queries bypass MongoDB indexes entirely, causing full collection scans. At 600 users with 10 rotating keywords, this is expected to be the single worst-performing endpoint. | `GET /api/v1/product/search/:keyword` with CSV-rotated keywords |
+| `search-filter-stress.jmx` | Keyword Search Spike | 1000 | 0 → 1000 over 5s | 5× load-test peak. A 5-second burst of 1000 regex searches is designed to overwhelm MongoDB's query execution threads, causing extreme tail latency and potential timeouts. | `GET /api/v1/product/search/:keyword` — spike pattern |
+| `search-filter-stress.jmx` | Price Filter Stress | 500 | 0 → 500 over 45s | 2.8× load-test peak (180). Cycles through 4 price ranges ($0–19, $20–39, $40–59, $60+) per iteration via `POST /product-filters`. Range queries (`$gte`/`$lte`) are more index-friendly than regex but still degrade under 500 concurrent filter operations. | `POST /api/v1/product/product-filters` across 4 price brackets |
+| `search-filter-stress.jmx` | Combined Search+Filter Stress | 400 | 0 → 400 over 30s | 2.7× load-test peak (150). Each iteration fires a keyword search then a price filter, doubling the request rate per thread. This simulates realistic browsing behaviour (search → refine) under stress and tests whether the chained regex + filter pipeline collapses. | `GET /search/:keyword` → `POST /product-filters` |
+| `category-stress.jmx` | Category Listing Stress | 500 | 0 → 500 over 30s | New coverage — no load-test baseline. Category listing returns all categories via `find({})`. At 500 users, tests Express middleware overhead and MongoDB connection pool saturation for a simple query. | `GET /api/v1/category/get-category` |
+| `category-stress.jmx` | Single Category Stress | 400 | 0 → 400 over 30s | New coverage. Slug-based lookup (`findOne({slug})`) should be fast, but at 400 concurrent users tests whether the slug field (not explicitly indexed) causes lock contention. | `GET /api/v1/category/single-category/:slug` |
+| `category-stress.jmx` | Category Products Stress | 400 | 0 → 400 over 30s | New coverage. Joins a category lookup with a product `find` by category ID. At 400 users, stresses both collections simultaneously. | `GET /api/v1/product/product-category/:slug` |
+
+**Run instructions** (requires [Apache JMeter 5.6.3](https://jmeter.apache.org/) on PATH and server running on port 6060):
+```bash
+npm run test:stress:product    # product browsing stress
+npm run test:stress:search     # search & filter stress
+npm run test:stress:auth       # authentication stress (runs cleanup first)
+npm run test:stress:category   # category stress
+npm run test:stress            # all four sequentially
+```
+HTML reports will be generated at `stress-tests/results/<test-name>-report/index.html`, not committed in this repository.
+
 ---
 
 #### Lee Seng Kitt (A0252087A)
