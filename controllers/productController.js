@@ -360,7 +360,13 @@ export const brainTreePaymentController = async (req, res) => {
     if (!cart || !Array.isArray(cart) || cart.length === 0) {
       return res.status(400).send({ error: "Invalid cart" });
     }
-    const total = cart.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
+    // Validate cart items exist in the database and compute total from DB prices
+    const productIds = cart.map((i) => i._id);
+    const dbProducts = await productModel.find({ _id: { $in: productIds } });
+    if (dbProducts.length !== cart.length) {
+      return res.status(400).send({ error: "One or more products not found" });
+    }
+    const total = dbProducts.reduce((sum, p) => sum + (Number(p.price) || 0), 0);
     let newTransaction = gateway.transaction.sale(
       {
         amount: total,
@@ -373,7 +379,7 @@ export const brainTreePaymentController = async (req, res) => {
         if (result) {
           try {
             const order = await new orderModel({
-              products: cart,
+              products: productIds,
               payment: result,
               buyer: req.user._id,
             }).save();

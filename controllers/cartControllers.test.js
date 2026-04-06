@@ -11,7 +11,11 @@ import orderModel from '../models/orderModel.js';
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
-jest.mock('../models/productModel.js');
+const mockProductFind = jest.fn();
+jest.mock('../models/productModel.js', () => ({
+  __esModule: true,
+  default: { find: (...args) => mockProductFind(...args) },
+}));
 jest.mock('../models/categoryModel.js');
 jest.mock('../models/orderModel.js');
 
@@ -118,6 +122,8 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
     orderModel.mockImplementation(() => ({
       save: jest.fn().mockResolvedValue(true),
     }));
+    // Default: productModel.find resolves with empty array (individual tests override)
+    mockProductFind.mockResolvedValue([]);
   });
 
   it('processes payment and creates order on success', async () => {
@@ -130,6 +136,10 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
       transaction: { id: 'txn123' },
     };
 
+    mockProductFind.mockResolvedValue([
+      { _id: 'p1', name: 'Item 1', price: 10 },
+      { _id: 'p2', name: 'Item 2', price: 20 },
+    ]);
     mockSale.mockImplementation((opts, cb) => {
       cb(null, transactionResult);
     });
@@ -152,9 +162,9 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
       expect.any(Function),
     );
 
-    // Verify order created
+    // Verify order created with product IDs (not full objects)
     expect(orderModel).toHaveBeenCalledWith({
-      products: cart,
+      products: ['p1', 'p2'],
       payment: transactionResult,
       buyer: 'buyer123',
     });
@@ -166,6 +176,7 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
   it('calculates total correctly for single item', async () => {
     const cart = [{ _id: 'p1', name: 'Solo', price: 42.5 }];
 
+    mockProductFind.mockResolvedValue([{ _id: 'p1', name: 'Solo', price: 42.5 }]);
     mockSale.mockImplementation((opts, cb) => {
       cb(null, { success: true });
     });
@@ -188,6 +199,9 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
       price: 10,
     }));
 
+    mockProductFind.mockResolvedValue(
+      Array.from({ length: 5 }, (_, i) => ({ _id: `p${i}`, name: `Item ${i}`, price: 10 })),
+    );
     mockSale.mockImplementation((opts, cb) => {
       cb(null, { success: true });
     });
@@ -205,6 +219,7 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
 
   it('returns 500 when braintree transaction fails', async () => {
     const transactionError = new Error('Transaction declined');
+    mockProductFind.mockResolvedValue([{ _id: 'p1', price: 10 }]);
     mockSale.mockImplementation((opts, cb) => {
       cb(transactionError, null);
     });
@@ -222,6 +237,7 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
   });
 
   it('does NOT create an order when transaction fails', async () => {
+    mockProductFind.mockResolvedValue([{ _id: 'p1', price: 10 }]);
     mockSale.mockImplementation((opts, cb) => {
       cb(new Error('Declined'), null);
     });
@@ -257,6 +273,10 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
       { _id: 'p2', price: 25 },
     ];
 
+    mockProductFind.mockResolvedValue([
+      { _id: 'p1', price: 0 },
+      { _id: 'p2', price: 25 },
+    ]);
     mockSale.mockImplementation((opts, cb) => {
       cb(null, { success: true });
     });
@@ -273,6 +293,7 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
   });
 
   it('sets buyer from req.user._id', async () => {
+    mockProductFind.mockResolvedValue([{ _id: 'p1', price: 10 }]);
     mockSale.mockImplementation((opts, cb) => {
       cb(null, { success: true });
     });
@@ -290,6 +311,7 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
 
   it('handles unexpected exception in try-catch and sends 500', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    mockProductFind.mockResolvedValue([{ _id: 'p1', price: 10 }]);
     mockSale.mockImplementation(() => {
       throw new Error('Gateway crash');
     });
@@ -317,6 +339,10 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
       { _id: 'p2', price: 20.3 },
     ];
 
+    mockProductFind.mockResolvedValue([
+      { _id: 'p1', price: 10.5 },
+      { _id: 'p2', price: 20.3 },
+    ]);
     mockSale.mockImplementation((opts, cb) => {
       // Verify floating-point accuracy
       expect(opts.amount).toBeCloseTo(30.8, 5);
@@ -337,9 +363,11 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
   /**
    * FIXED: Missing price now defaults to 0 via Number() || 0.
    */
-  it('sends 0 amount when cart items have no price', async () => {
+  it('uses DB price when cart items have no price field', async () => {
     const cart = [{ _id: 'p1', name: 'No Price Item' }]; // no price field
 
+    // DB has the real price
+    mockProductFind.mockResolvedValue([{ _id: 'p1', name: 'No Price Item', price: 25 }]);
     mockSale.mockImplementation((opts, cb) => {
       cb(null, { success: true });
     });
@@ -352,19 +380,21 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
 
     await brainTreePaymentController(req, res);
 
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 0 }), expect.any(Function));
+    // Should use DB price (25), not 0
+    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 25 }), expect.any(Function));
   });
 
   /**
-   * KNOWN ISSUE: No server-side price validation. The client sends the entire
-   * cart including prices. A malicious client could modify prices.
-   * This is NOT fixed in this PR.
+   * FIXED: Server now validates cart product IDs against the database
+   * and uses DB prices instead of client-provided prices.
    */
-  it('accepts client-provided prices without server validation', async () => {
+  it('uses DB price instead of tampered client price [SEC-2 FIXED]', async () => {
     const tamperedCart = [
-      { _id: 'expensive-item', price: 0.01 }, // real price is $999
+      { _id: 'expensive-item', price: 0.01 }, // client sends $0.01
     ];
 
+    // DB has the real price
+    mockProductFind.mockResolvedValue([{ _id: 'expensive-item', price: 999 }]);
     mockSale.mockImplementation((opts, cb) => {
       cb(null, { success: true });
     });
@@ -377,8 +407,8 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
 
     await brainTreePaymentController(req, res);
 
-    // Server blindly trusts the client's price
-    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 0.01 }), expect.any(Function));
+    // Server uses DB price (999), not the tampered price (0.01)
+    expect(mockSale).toHaveBeenCalledWith(expect.objectContaining({ amount: 999 }), expect.any(Function));
     expect(res.json).toHaveBeenCalledWith({ ok: true });
   });
 
@@ -397,6 +427,7 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
       save: jest.fn().mockReturnValue(savePromise),
     }));
 
+    mockProductFind.mockResolvedValue([{ _id: 'p1', price: 10 }]);
     mockSale.mockImplementation((opts, cb) => {
       cb(null, { success: true });
     });
@@ -439,7 +470,6 @@ describe('brainTreePaymentController – POST /api/v1/product/braintree/payment'
  * REMAINING KNOWN ISSUES (not fixed):
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * - NO SERVER-SIDE PRICE VALIDATION: Server trusts client-provided prices.
- * - NO INPUT VALIDATION: nonce, cart, req.user not validated.
+ * - NO INPUT VALIDATION: nonce, req.user not validated.
  * - NO IDEMPOTENCY: Double-submit can create duplicate orders.
  */

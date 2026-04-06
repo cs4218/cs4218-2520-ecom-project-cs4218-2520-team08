@@ -37,6 +37,7 @@ const CartPage = () => {
     try {
       let myCart = [...cart];
       let index = myCart.findIndex((item) => item._id === pid);
+      if (index === -1) return;
       myCart.splice(index, 1);
       setCart(myCart);
       localStorage.setItem("cart", JSON.stringify(myCart));

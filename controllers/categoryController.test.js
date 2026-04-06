@@ -286,7 +286,7 @@ describe('categoryController', () => {
       });
     });
 
-    it('returns null category when slug not found', async () => {
+    it('returns 404 when slug not found', async () => {
       categoryModel.findOne.mockResolvedValue(null);
 
       const req = mockReq({ params: { slug: 'nonexistent' } });
@@ -294,11 +294,10 @@ describe('categoryController', () => {
 
       await singleCategoryController(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.status).toHaveBeenCalledWith(404);
       expect(res.send).toHaveBeenCalledWith({
-        success: true,
-        message: 'Get Single Category Successfully',
-        category: null,
+        success: false,
+        message: 'Category Not Found',
       });
     });
 

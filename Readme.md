@@ -4,11 +4,133 @@
 
 [![Integration Tests (Jest)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/integration-tests.yaml/badge.svg)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/integration-tests.yaml)
 
+[![Load Tests (JMeter)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/load-tests.yaml/badge.svg)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/load-tests.yaml)
+
 ## Milestone 1 CI Run
 
 [Milestone 1 CI Run](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/runs/22277019646)
 
 ## Workload Distribution
+
+### Milestone 3 Performance Testing
+
+#### Tsui Yi Wern (A0266070J)
+
+**Load Tests**
+
+- `load-tests/authentication.jmx`
+- `load-tests/product-browsing.jmx`
+- `load-tests/search-filter.jmx`
+
+Implemented JMeter load tests across 3 test plans and 9 thread groups covering the most performance-critical API flows. Each thread group starts with 0 concurrent users and linearly ramps up to peak load over `ramp_time` seconds, then holds at peak for a further 120 seconds. This progressive ramp-up (equivalent to 10 → 50 → 100+ users over time) reveals the exact point at which response times degrade, throughput plateaus, or errors begin to appear — identifying bottlenecks before the system reaches failure.
+
+| Thread Group | Peak Users | Ramp-up (s) | Hold at peak (s) | Total duration (s) |
+|---|---|---|---|---|
+| Paginated Product Listing | 300 | 180 | 120 | 300 |
+| Single Product View | 250 | 150 | 120 | 270 |
+| Related Products | 250 | 150 | 120 | 270 |
+| Keyword Search | 200 | 120 | 120 | 240 |
+| Filter by Price Range | 180 | 120 | 120 | 240 |
+| Search then Filter | 150 | 90 | 120 | 210 |
+| User Login | 75 | 60 | 90 | 150 |
+| User Registration | 50 | 45 | 75 | 120 |
+| Authenticated User Flow | 40 | 30 | 90 | 120 |
+
+| Test Plan | Thread Group | Peak Concurrent Users | Ramp-up | Reason for Load Number | What is tested |
+|---|---|---|---|---|---|
+| `product-browsing.jmx` | Paginated Product Listing | 300 | 0 → 300 over 180s | Browsing is the most common activity — most visitors never log in; 300 concurrent users reflects the dominant baseline of anonymous + authenticated shoppers hitting the product list at peak. Set at ~6× registration load (300 vs 50) since browse traffic vastly exceeds sign-up traffic — most visitors never register. | Paginated listing across pages 1 and 2 (`/product-list/:page`) |
+| `product-browsing.jmx` | Single Product View | 250 | 0 → 250 over 150s | A large proportion of listing visitors click into a product detail page; 250 is 50 less than listing load, reflecting slight drop-off from list to detail view. Still far above all auth flows since browsing precedes authentication. | Product detail + photo retrieval (binary data from MongoDB — heaviest endpoint) |
+| `product-browsing.jmx` | Related Products | 250 | 0 → 250 over 150s | Users who view a product detail page also see related products inline; set equal to Single Product View since they are loaded on the same page visit. | Related products query by product ID and category ID |
+| `search-filter.jmx` | Keyword Search | 200 | 0 → 200 over 120s | Search is heavily used by active shoppers; 200 reflects the majority of browsing users who enter a keyword at some point. Lower than direct browse (300) because not all users search. | Keyword search via `/search/:keyword` with CSV-rotated keywords |
+| `search-filter.jmx` | Filter by Price Range | 180 | 0 → 180 over 120s | Price filtering is common after search; 180 is slightly below keyword search since it requires an extra deliberate interaction. | `POST /product-filters` across $0–$19, $20–$39, $40–$59, $60+ |
+| `search-filter.jmx` | Search then Filter | 150 | 0 → 150 over 90s | Combined search+filter is a realistic full browsing flow; 150 represents users who refine results after an initial search, a subset of both groups above. | Sequential search → price filter to simulate real browsing behaviour |
+| `authentication.jmx` | User Login | 75 | 0 → 75 over 60s | Login is the most frequent auth action; 75 concurrent sessions reflects ~25% of the peak browsing load (300), representing users who transition from anonymous browsing to authenticated sessions during peak hours. Set as the highest auth flow since login is a prerequisite for all other auth actions. | Login throughput under concurrent load; asserts HTTP 200 |
+| `authentication.jmx` | User Registration | 50 | 0 → 50 over 45s | Registration spikes occur at launch or promotion events; 50 simultaneous sign-ups is ~67% of the login load since users log in far more often than they register. Represents a realistic peak burst for a growing ecommerce app. Each thread uses a unique email from a pre-generated CSV to avoid duplicate registration conflicts. | 50 concurrent registrations using CSV-driven unique users |
+| `authentication.jmx` | Authenticated User Flow | 40 | 0 → 40 over 30s | Fewer users proceed past login to navigate protected routes; 40 is ~53% of the login load, reflecting the subset of authenticated users who actively check order history. Lower than login since not all logged-in users visit the orders page. | Full flow — login → JWT capture → `/user-auth` → `/orders` |
+
+**Run instructions** (requires [Apache JMeter 5.6.3](https://jmeter.apache.org/) on PATH and server running on port 6060):
+```bash
+npm run test:load:product   # product browsing
+npm run test:load:search    # search & filter
+npm run test:load:auth      # authentication
+npm run test:load           # all three
+```
+HTML reports will be generated at `load-tests/results/<test-name>-report/index.html`, not committed in this repository.
+
+**CI:** [Load Tests (JMeter)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/load-tests.yaml)
+
+---
+
+#### Yeo Zi Yi (A0266292X)
+
+---
+
+#### Keagan Pang Zhong Hon (A0258729L)
+
+**Stress Tests**
+
+- `stress-tests/authentication-stress.jmx`
+- `stress-tests/product-browsing-stress.jmx`
+- `stress-tests/search-filter-stress.jmx`
+- `stress-tests/category-stress.jmx`
+
+Implemented JMeter stress tests across 4 test plans and 16 thread groups that push the server **2–5× beyond load-test peaks** to find breaking points, observe degradation, and verify recovery. Each plan uses two stress patterns: *sustained stress* (aggressive ramp-up to 2–4× the load-test peak, held for 120–180 s) and *spike stress* (flash-crowd burst to 4–6.7× the load-test peak over 5–10 s, held for 60 s). Think time is halved to 500 ms and CSV data files are recycled (`recycle=true`) so threads exceeding the row count wrap around, intentionally triggering duplicate-registration errors to stress error-handling paths.
+
+| Thread Group | Peak Users | Ramp-up (s) | Hold at peak (s) | Total duration (s) | Pattern |
+|---|---|---|---|---|---|
+| Login Stress | 300 | 30 | 180 | 210 | Sustained |
+| Login Spike | 500 | 5 | 60 | 65 | Spike |
+| Registration Stress | 200 | 20 | 120 | 140 | Sustained |
+| Auth Flow Stress | 150 | 20 | 120 | 140 | Sustained |
+| Forgot Password Stress | 100 | 15 | 90 | 105 | Sustained |
+| Paginated Listing Stress | 800 | 60 | 180 | 240 | Sustained |
+| Paginated Listing Spike | 1200 | 10 | 60 | 70 | Spike |
+| Single Product + Photo Stress | 700 | 60 | 180 | 240 | Sustained |
+| Related Products Stress | 700 | 60 | 180 | 240 | Sustained |
+| Keyword Search Stress | 600 | 45 | 180 | 225 | Sustained |
+| Keyword Search Spike | 1000 | 5 | 60 | 65 | Spike |
+| Price Filter Stress | 500 | 45 | 150 | 195 | Sustained |
+| Combined Search+Filter Stress | 400 | 30 | 120 | 150 | Sustained |
+| Category Listing Stress | 500 | 30 | 120 | 150 | Sustained |
+| Single Category Stress | 400 | 30 | 120 | 150 | Sustained |
+| Category Products Stress | 400 | 30 | 120 | 150 | Sustained |
+
+| Test Plan | Thread Group | Peak Concurrent Users | Ramp-up | Reason for Load Number | What is tested |
+|---|---|---|---|---|---|
+| `authentication-stress.jmx` | Login Stress | 300 | 0 → 300 over 30s | 4× load-test peak (75). bcrypt `compare` is CPU-bound; 300 concurrent bcrypt operations are expected to saturate the Node.js event loop, inflating response times to 3–5 s. Serialized execution (`serialize_threadgroups=true`) isolates bcrypt contention per group. | `POST /api/v1/auth/login` — measures degradation curve of bcrypt-bound login |
+| `authentication-stress.jmx` | Login Spike | 500 | 0 → 500 over 5s | 6.7× load-test peak. A 5-second flash crowd of 500 simultaneous logins tests whether the server can absorb a sudden burst without crashing or timing out. | `POST /api/v1/auth/login` — spike pattern to find the bcrypt breaking point |
+| `authentication-stress.jmx` | Registration Stress | 200 | 0 → 200 over 20s | 4× load-test peak (50). Each registration calls `bcrypt.hash` (10 salt rounds). With only 50 unique CSV emails recycled across 200 threads, ~75% of requests hit duplicate-email rejection — intentionally stressing error-handling paths and measuring how fast the server rejects duplicates. | `POST /api/v1/auth/register` — bcrypt hash under concurrency + duplicate handling |
+| `authentication-stress.jmx` | Auth Flow Stress | 150 | 0 → 150 over 20s | 3.75× load-test peak (40). Chains 3 dependent requests per iteration (login → token verify → orders), tripling the effective request rate per user. Tests JWT verification and MongoDB order population with product joins under sustained concurrency. | `POST login` → `GET /user-auth` → `GET /orders` — authenticated multi-step flow |
+| `authentication-stress.jmx` | Forgot Password Stress | 100 | 0 → 100 over 15s | New coverage not in load tests. Calls `hashPassword` (bcrypt) on every request. At 100 concurrent users, measures whether the forgot-password endpoint degrades similarly to registration under CPU-bound hashing. | `POST /api/v1/auth/forgot-password` — bcrypt hash + DB update |
+| `product-browsing-stress.jmx` | Paginated Listing Stress | 800 | 0 → 800 over 60s | 2.7× load-test peak (300). Browsing is the dominant traffic pattern. At 800 concurrent users, each iteration fires 3 requests (product-count + page 1 + page 2), generating ~2400 effective concurrent DB queries to stress MongoDB cursor allocation and the connection pool. | `GET /product-count` → `GET /product-list/1` → `GET /product-list/2` |
+| `product-browsing-stress.jmx` | Paginated Listing Spike | 1200 | 0 → 1200 over 10s | 4× load-test peak. A 10-second ramp to 1200 users simulates a flash sale or viral link — the highest concurrency in the entire test suite. Tests whether MongoDB connections are exhausted and whether Express queues requests or drops them. | Same as Paginated Listing Stress — spike pattern |
+| `product-browsing-stress.jmx` | Single Product + Photo Stress | 700 | 0 → 700 over 60s | 2.8× load-test peak (250). Product photo serves binary data (potentially hundreds of KB) from MongoDB. At 700 users, total bandwidth can exceed 100 MB/s, making this the expected memory/bandwidth bottleneck. Each iteration: fetch all products → extract slug/id → fetch single product → fetch photo. | `GET /get-product` → `GET /get-product/:slug` → `GET /product-photo/:pid` |
+| `product-browsing-stress.jmx` | Related Products Stress | 700 | 0 → 700 over 60s | 2.8× load-test peak (250). The related-products query uses a category-scoped `find` with `$ne` exclusion, which cannot use a simple index. At 700 users, MongoDB's query planner and connection pool are under heavy contention. | `GET /get-product` → `GET /related-product/:pid/:cid` |
+| `search-filter-stress.jmx` | Keyword Search Stress | 600 | 0 → 600 over 45s | 3× load-test peak (200). Search uses `$regex` on `name` and `description` — regex queries bypass MongoDB indexes entirely, causing full collection scans. At 600 users with 10 rotating keywords, this is expected to be the single worst-performing endpoint. | `GET /api/v1/product/search/:keyword` with CSV-rotated keywords |
+| `search-filter-stress.jmx` | Keyword Search Spike | 1000 | 0 → 1000 over 5s | 5× load-test peak. A 5-second burst of 1000 regex searches is designed to overwhelm MongoDB's query execution threads, causing extreme tail latency and potential timeouts. | `GET /api/v1/product/search/:keyword` — spike pattern |
+| `search-filter-stress.jmx` | Price Filter Stress | 500 | 0 → 500 over 45s | 2.8× load-test peak (180). Cycles through 4 price ranges ($0–19, $20–39, $40–59, $60+) per iteration via `POST /product-filters`. Range queries (`$gte`/`$lte`) are more index-friendly than regex but still degrade under 500 concurrent filter operations. | `POST /api/v1/product/product-filters` across 4 price brackets |
+| `search-filter-stress.jmx` | Combined Search+Filter Stress | 400 | 0 → 400 over 30s | 2.7× load-test peak (150). Each iteration fires a keyword search then a price filter, doubling the request rate per thread. This simulates realistic browsing behaviour (search → refine) under stress and tests whether the chained regex + filter pipeline collapses. | `GET /search/:keyword` → `POST /product-filters` |
+| `category-stress.jmx` | Category Listing Stress | 500 | 0 → 500 over 30s | New coverage — no load-test baseline. Category listing returns all categories via `find({})`. At 500 users, tests Express middleware overhead and MongoDB connection pool saturation for a simple query. | `GET /api/v1/category/get-category` |
+| `category-stress.jmx` | Single Category Stress | 400 | 0 → 400 over 30s | New coverage. Slug-based lookup (`findOne({slug})`) should be fast, but at 400 concurrent users tests whether the slug field (not explicitly indexed) causes lock contention. | `GET /api/v1/category/single-category/:slug` |
+| `category-stress.jmx` | Category Products Stress | 400 | 0 → 400 over 30s | New coverage. Joins a category lookup with a product `find` by category ID. At 400 users, stresses both collections simultaneously. | `GET /api/v1/product/product-category/:slug` |
+
+**Run instructions** (requires [Apache JMeter 5.6.3](https://jmeter.apache.org/) on PATH and server running on port 6060):
+```bash
+npm run test:stress:product    # product browsing stress
+npm run test:stress:search     # search & filter stress
+npm run test:stress:auth       # authentication stress (runs cleanup first)
+npm run test:stress:category   # category stress
+npm run test:stress            # all four sequentially
+```
+HTML reports will be generated at `stress-tests/results/<test-name>-report/index.html`, not committed in this repository.
+
+---
+
+#### Lee Seng Kitt (A0252087A)
+
+---
+
+#### Kamat Shivangi Prashant (A0319665R)
 
 ### Milestone 2 Integration & UI Tests
 
@@ -68,6 +190,50 @@
 
 #### Yeo Zi Yi (A0266292X)
 
+**Integration Tests**
+
+- `integration-tests/backend/ordersProfile.integration.test.js`
+- `integration-tests/frontend/search_profile_orders.integration.test.js`
+
+**Backend (`ordersProfile.integration.test.js`)** — real MongoDB via `integration-tests/backend/helpers/testDb.js`; exercises `orderModel`, `userModel`, `productModel`, `categoryModel`, `hashPassword`, and `comparePassword` together with the listed controllers.
+
+| # | Test | Modules integrated | Description |
+|---|------|--------------------|-------------|
+| 1 | Profile update persists | `updateProfileController`, `userModel`, `hashPassword`, `comparePassword` | Create a user, call `updateProfileController` with new name, phone, and password. Assert HTTP 200 payload, MongoDB fields updated, password stored as bcrypt, and `comparePassword` succeeds for the new password and fails for the old one. |
+| 2 | Get orders with populated data | `getOrdersController`, `orderModel`, `userModel`, `productModel` | Create an order with two products (including photo buffers). Call `getOrdersController` as the buyer. Assert JSON array length, populated `buyer.name`, product names, and that serialized products omit `photo`. |
+| 3 | Get all orders (admin) sorted | `getAllOrdersController`, `orderModel`, `userModel`, `productModel` | Create three orders with staggered timestamps. Call `getAllOrdersController`. Assert newest-first order of IDs, populated buyer names and product names, and no `photo` on products in the response. |
+| 4 | Order status update persists | `orderStatusController`, `orderModel` | Create an order with status `Not Process`. Call `orderStatusController` with `Shipped`. Assert response JSON and MongoDB document both show `Shipped`. |
+| 5 | Buyer order isolation | `getOrdersController`, `orderModel`, `userModel`, `productModel` | Create two users and three orders (two for user A, one for user B). Call `getOrdersController` as user A. Assert only A’s order IDs appear in the response. |
+
+**Frontend (`search_profile_orders.integration.test.js`)** — React Testing Library with `MemoryRouter`, `AuthProvider`, `CartProvider`, `SearchProvider`; axios mocked for API boundaries.
+
+| # | Test | Modules integrated | Description |
+|---|------|--------------------|-------------|
+| 1 | Search submits and shows results | `SearchInput`, `SearchProvider`, `Search`, `Layout`, axios | Render `Layout` with `SearchInput`, type a keyword, submit. Assert `GET /api/v1/product/search/:keyword` and that result product names appear (shared context drives `Search` route). |
+| 2 | Profile update and persistence | `Profile`, `AuthProvider`, axios, `react-hot-toast` | Pre-seed `localStorage` auth, render `Profile`, change name/phone/address, submit. Assert `PUT /api/v1/auth/profile` payload, success toast, and updated user in `localStorage`. |
+| 3 | Orders list UI | `Orders`, `AuthProvider`, axios | Mock `GET /api/v1/auth/orders` with a populated order. Assert table fields (status, buyer, payment, product row, image `src`, price text, relative date). |
+| 4 | Search result cards | `SearchInput`, `Search`, `SearchProvider`, `AuthProvider`, `CartProvider`, axios | Submit search from `/`, assert card shows name, truncated description, price, and **More Details** / **ADD TO CART** buttons. |
+| 5 | Layout wraps content | `Layout`, `Header`, `Footer`, providers | Render `Layout` with child text; assert **Virtual Vault**, child content, and **All Rights Reserved** footer. |
+
+**UI Tests**
+
+- `ui_tests/searchAndOrders.spec.js`
+
+Run UI tests (Playwright): `npm run test:ui`  
+Requires app reachable at the Playwright `baseURL` (default `http://localhost:3000`), API proxied to the backend, and `MONGO_URL` in `.env` for seeding test users, admin role, and a sample order.
+
+| # | Test | Pages / components traversed | Description |
+|---|------|-------------------------------|-------------|
+| 1 | Profile structure and field update | `/login` → `/dashboard/user/profile` | Log in as seeded buyer. Assert document title **Your Profile**, form fields including disabled email, footer; update name/phone/address; assert success toast and navbar name. |
+| 2 | Dashboard UserMenu | `/dashboard/user` | Assert **Profile** and **Orders** links in the user sidebar. |
+| 3 | Orders via UserMenu + `getOrders` | `/dashboard/user` → `/dashboard/user/orders` | Wait for `GET /api/v1/auth/orders`. Assert **Your Orders** title, table headers, status **Not Process**, payment **Success**, quantity **1**, and seeded product name in the line items. |
+| 4 | Profile password rotation | `/dashboard/user/profile`, `/login` | `PUT /api/v1/auth/profile` with new password; logout; log in again with the new password (covers `updateProfile` password hashing end-to-end). |
+| 5 | Header search → results | `/` → `/search` | Assert `form[role="search"]`, `GET /api/v1/product/search/...`, document title **Search results**, heading and **Found N**, product cards. |
+| 6 | Search empty API result | `/` → `/search` | Search with a nonsense keyword; assert **No Products Found**. |
+| 7 | Cold `/search` route | `/search` | With default empty search context, assert **Search Resuts** heading and **No Products Found**. |
+| 8 | Admin Users page | `/login` → `/dashboard/admin/users` | Wait for `admin-auth`; assert **All Users**, page title, and **AdminMenu** links (Create Category, Products, Orders). |
+| 9 | Non-admin blocked from admin URL | `/dashboard/admin/users` → `/login` | Logged-in buyer opens admin users URL; assert spinner copy and redirect to login. |
+
 ---
 
 #### Keagan Pang Zhong Hon (A0258729L)
@@ -111,7 +277,49 @@
 
 ---
 
-#### Lee Seng Kitt
+#### Lee Seng Kitt (A0252087A)
+
+**Integration Tests**
+
+- `integration-tests/backend/categoryPaymentController.integration.test.js`
+- `integration-tests/frontend/categoryCartHomepage.integration.test.js`
+
+**Backend (`categoryPaymentController.integration.test.js`)** — real MongoDB via `integration-tests/backend/helpers/testDb.js`; exercises `categoryModel`, `productModel`, `orderModel`, `userModel`, and `braintree` (mocked SDK) together with the listed controllers.
+
+| # | Test | Modules Integrated | Description |
+|---|------|--------------------|-------------|
+| 1 | Get all categories from real DB | `categoryControlller`, `categoryModel` | Insert 3 categories with mixed-case slugs into MongoDB. Call `categoryControlller`. Verify HTTP 200, success flag, all 3 categories returned with correct names, and that Mongoose's `lowercase: true` transform lowercases the slugs. |
+| 2 | Get single category by slug | `singleCategoryController`, `categoryModel` | Create a category, call `singleCategoryController` with its slug. Verify the correct category is returned with matching name and slug. Also verifies a 404 response with `success: false` for a non-existent slug. |
+| 3 | Payment creates order with products | `brainTreePaymentController`, `orderModel`, `userModel`, `productModel`, `categoryModel`, `braintree` (mocked) | Create a buyer, a category, and two products. Call `brainTreePaymentController` with a fake nonce and cart. Verify the order document is created in MongoDB with correct buyer ID, both product IDs, payment success flag, transaction ID, and default status `Not Process`. Also verifies payment is rejected with HTTP 400 when the cart contains a non-existent product ID and no order is created. |
+| 4 | Category listing reflects live DB state | `categoryControlller`, `categoryModel` | Start with an empty DB and verify the category list is empty. Insert 3 categories and verify all appear. Delete one category and verify the list reflects the removal immediately, with only the 2 remaining categories returned. |
+
+**Frontend (`categoryCartHomepage.integration.test.js`)** — React Testing Library with `MemoryRouter`, `AuthProvider`, `CartProvider`, `SearchProvider`; axios mocked for API boundaries.
+
+| # | Test | Modules Integrated | Description |
+|---|------|--------------------|-------------|
+| 5 | HomePage category filters + product display | `HomePage`, `Layout`, `Header`, `AuthProvider`, `CartProvider`, `SearchProvider`, axios | Render HomePage with all providers. Verify category checkboxes, price radio buttons, and product cards all render. Also verifies clicking a category checkbox triggers the filter API call (`POST /product-filters`) with the correct `checked` payload, and the filtered products display. |
+| 6 | Add to cart from HomePage updates cart context | `HomePage`, `Layout`, `Header`, `CartProvider`, axios | Render HomePage. Click ADD TO CART on two products sequentially. Verify the Header badge count increments from 1 to 2. Also verifies localStorage is updated with the added product data. |
+| 7 | CartPage displays items with totals | `CartPage`, `Layout`, `Header`, `CartProvider`, `AuthProvider` | Pre-populate localStorage with 3 cart items ($10, $25.50, $49.99) and auth data. Render CartPage. Verify all items render with Remove buttons, the heading shows "3 items", the formatted total is $85.49, and the Header badge shows 3. |
+| 8 | CartPage remove item flow | `CartPage`, `Layout`, `Header`, `CartProvider`, `AuthProvider` | Pre-populate 2 items. Remove the first item. Verify it disappears, the second remains, and the heading updates to "1 item". Also verifies the total recalculates correctly, localStorage updates to contain only the remaining item, and removing all items shows "Your Cart Is Empty" with badge 0. |
+| 9 | Cart localStorage persistence | `HomePage`, `CartPage`, `Layout`, `CartProvider`, `AuthProvider`, axios | Pre-populate localStorage with 3 saved items. Render CartPage. Verify items and badge restore on mount. Also verifies cart data persists across unmount/remount cycles: add 2 items on HomePage, unmount, re-render a fresh CartPage, and verify both items and badge are still present. |
+| 10 | Categories page with useCategory hook | `Categories`, `Layout`, `Header`, `useCategory`, `AuthProvider`, `CartProvider`, `SearchProvider`, axios | Mock 4 categories. Render Categories page. Verify all 4 render as links with correct `/category/:slug` href patterns. Also verifies Layout renders Header ("Virtual Vault") and Footer ("All Rights Reserved") correctly. |
+
+**UI Tests**
+
+- `ui_tests/cartShopping.spec.js`
+
+| # | Test | Pages / Components Traversed | Description |
+|---|------|-------------------------------|-------------|
+| 1 | Multi-Item Cart → Remove Item → Verify Total | HomePage, CartPage | Add 2 products from the homepage, capturing their names and prices. Navigate to the cart. Verify both items display with correct names and prices, and the total equals their sum. Remove the first item. Verify it disappears, the second remains, and the total updates to the second item's price. |
+| 2 | Cart Persistence Across Navigation | HomePage, Categories, About, CartPage | Add a product from the homepage. Verify the cart badge shows 1. Navigate to `/categories`, then `/about` — verify the badge persists at 1 on every page. Navigate to the cart and verify the product is still listed. |
+| 3 | Add Items from Different Pages | HomePage, ProductDetails, CategoryProduct, CartPage | Add a product from the homepage. Click "More Details" on a second product and add from the product details page. Navigate to a category page via the Categories dropdown and add a third product. Verify the cart badge shows 3 and all 3 items appear on the cart page. |
+| 4 | Guest Cart Experience | HomePage, CartPage | As an unauthenticated guest, add a product and navigate to the cart. Verify the greeting says "Hello Guest", the "please login to checkout" message appears, the "Plase Login to checkout" button is visible, no payment section is shown, and the item displays with a Remove button. |
+| 5 | Cart Item Count Accuracy | HomePage, CartPage | Add the same product 3 times from the homepage. Verify the badge shows 3. Navigate to the cart. Verify 3 item cards display and the total is 3× the single price. Remove one item. Verify the badge drops to 2 and the total updates to 2× the price. |
+| 6 | Categories Page → Shop Multiple Categories | Categories, CategoryProduct, CartPage | Navigate to `/categories`. Click the first category, add a product to the cart. Go back to `/categories`, click a different category, add another product. Navigate to the cart. Verify both items are present, each from a different category. |
+| 7 | Empty Cart State | CartPage | Navigate directly to `/cart` with an empty cart. Verify the "Your Cart Is Empty" message is shown and the total displays $0.00. |
+| 8 | Cart to Login Flow (Guest) | HomePage, CartPage, Login | As a guest, add a product and navigate to the cart. Click the "Plase Login to checkout" button. Verify the browser navigates to `/login`. |
+| 9 | Add to Cart from Product Details → Verify in Cart | HomePage, ProductDetails, CartPage | Click "More Details" on a homepage product. Extract the product name and price from the details page. Click "ADD TO CART". Navigate to the cart. Verify the product appears with the exact same name and price as shown on the details page. |
+| 10 | Cart Badge Reflects Adds from Category Pages | Header, CategoryProduct, CartPage | Navigate to a category page via the Categories dropdown, finding a category with at least 2 products. Add the first product — verify badge shows 1. Add the second — verify badge shows 2. Navigate to the cart and verify both items are listed. |
 
 ---
 
@@ -174,7 +382,7 @@
 - `components/Layout.js`
 - `components/Spinner.js`
 
-#### Lee Seng Kitt
+#### Lee Seng Kitt (A0252087A)
 
 - `controllers/categoryController.js`
   - `categoryController`
