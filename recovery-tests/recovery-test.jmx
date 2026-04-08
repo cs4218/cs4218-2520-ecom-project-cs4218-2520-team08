@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
-  <!-- John Doe, A0123456B -->
+  <!-- Shivangi Kamat, A0319665R -->
   <hashTree>
     <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Recovery Test" enabled="true">
-      <stringProp name="TestPlan.comments">Recovery test: injects a crash mid-test to verify server recovers and requests resume succeeding. // John Doe, A0123456B</stringProp>
+      <stringProp name="TestPlan.comments">Recovery test: injects a crash mid-test to verify server recovers and requests resume succeeding. // Shivangi Kamat, A0319665R</stringProp>
       <boolProp name="TestPlan.functional_mode">false</boolProp>
       <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
@@ -37,7 +37,7 @@
 
       <!-- ===== THREAD GROUP 1: Continuous Request Load ===== -->
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Load Generator" enabled="true">
-        <!-- John Doe, A0123456B -->
+        <!-- Shivangi Kamat, A0319665R -->
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController">
           <boolProp name="LoopController.continue_forever">false</boolProp>
