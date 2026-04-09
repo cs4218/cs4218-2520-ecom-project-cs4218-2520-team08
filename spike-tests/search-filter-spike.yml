@@ -1,0 +1,79 @@
+config:
+  target: "http://localhost:6060"
+  phases:
+    - name: "Warm up"
+      duration: 15
+      arrivalRate: 5
+    - name: "Spike ramp-up"
+      duration: 10
+      arrivalRate: 10
+      rampTo: 80
+    - name: "Spike peak"
+      duration: 20
+      arrivalRate: 80
+    - name: "Recovery"
+      duration: 30
+      arrivalRate: 15
+  http:
+    timeout: 10
+  plugins:
+    expect: {}
+  payload:
+    path: "./spike-tests/data/search-keywords.csv"
+    fields:
+      - "keyword"
+
+scenarios:
+  - name: "Search products by keyword (spike)"
+    weight: 40
+    flow:
+      - get:
+          url: "/api/v1/product/search/{{ keyword }}"
+          expect:
+            - statusCode: 200
+      - think: 1
+
+  - name: "Filter products by price range (spike)"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/v1/product/product-filters"
+          json:
+            checked: []
+            radio: [0, 19]
+          expect:
+            - statusCode: 200
+      - think: 1
+      - post:
+          url: "/api/v1/product/product-filters"
+          json:
+            checked: []
+            radio: [20, 39]
+          expect:
+            - statusCode: 200
+      - think: 1
+      - post:
+          url: "/api/v1/product/product-filters"
+          json:
+            checked: []
+            radio: [40, 59]
+          expect:
+            - statusCode: 200
+
+  - name: "Search then filter (spike)"
+    weight: 30
+    flow:
+      - get:
+          url: "/api/v1/product/search/{{ keyword }}"
+          expect:
+            - statusCode: 200
+      - think: 1
+      - post:
+          url: "/api/v1/product/product-filters"
+          json:
+            checked: []
+            radio: [0, 99]
+          expect:
+            - statusCode: 200
+      - think: 1
+
