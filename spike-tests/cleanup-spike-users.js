@@ -1,5 +1,4 @@
-// Removes spike-test registration users; resets primary test account password.
-
+// Yeo Zi Yi, A0266292X
 require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
