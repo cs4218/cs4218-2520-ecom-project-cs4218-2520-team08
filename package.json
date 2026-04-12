@@ -27,7 +27,7 @@
     "test:stress:auth": "node stress-tests/cleanup-stress-users.js && node -e \"const fs=require('fs');fs.rmSync('stress-tests/results/authentication-stress-results.csv',{force:true});fs.rmSync('stress-tests/results/authentication-stress-report',{recursive:true,force:true});\" && jmeter -n -t stress-tests/authentication-stress.jmx -l stress-tests/results/authentication-stress-results.csv -e -o stress-tests/results/authentication-stress-report",
     "test:stress:category": "node -e \"const fs=require('fs');fs.rmSync('stress-tests/results/category-stress-results.csv',{force:true});fs.rmSync('stress-tests/results/category-stress-report',{recursive:true,force:true});\" && jmeter -n -t stress-tests/category-stress.jmx -l stress-tests/results/category-stress-results.csv -e -o stress-tests/results/category-stress-report",
     "test:capacity": "node capacity-tests/cleanup-capacity-users.cjs && node -e \"const fs=require('fs');fs.rmSync('capacity-tests/results/capacity-results.csv',{force:true});fs.rmSync('capacity-tests/results/capacity-report',{recursive:true,force:true});fs.rmSync('capacity-tests/results/system-metrics.csv',{force:true});\" && jmeter -n -t capacity-tests/capacity-test.jmx -l capacity-tests/results/capacity-results.csv -e -o capacity-tests/results/capacity-report",
-    "test:capacity:analyze": "node capacity-tests/analyze-results.js"
+    "test:capacity:analyze": "node capacity-tests/analyze-results.cjs"
   },
   "keywords": [],
   "author": "RP",

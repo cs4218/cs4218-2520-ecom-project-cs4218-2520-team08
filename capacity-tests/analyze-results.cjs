@@ -15,12 +15,8 @@
  * Default CSV: capacity-tests/results/capacity-results.csv
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+const path = require('path');
 
 // --- Configuration ---
 const LATENCY_THRESHOLD_MS = 1800;   // P75 latency threshold
