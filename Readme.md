@@ -128,6 +128,59 @@ HTML reports will be generated at `stress-tests/results/<test-name>-report/index
 
 #### Lee Seng Kitt (A0252087A)
 
+**Capacity Tests**
+
+- `capacity-tests/capacity-test.jmx`
+- `capacity-tests/analyze-results.cjs`
+- `capacity-tests/cleanup-capacity-users.cjs`
+
+Implemented a JMeter capacity test that determines the maximum number of concurrent users the application can sustain while maintaining acceptable response times and error rates. The test continuously ramps from 0 to 1000 concurrent users over 12 minutes, simulating a realistic end-to-end user journey. A post-test analyzer parses JMeter CSV output to identify the capacity ceiling — the highest concurrent-user count where P75 latency ≤ 1800 ms AND error rate ≤ 0.1%.
+
+**Test flow per virtual user:** Login → Product List → Product Detail → Related Products → Braintree Token → Braintree Payment → User Orders.
+
+| Parameter | Value | Rationale |
+|---|---|---|
+| Max threads | 1000 | High enough to guarantee finding the ceiling (actual ceiling was ~344); ensures the test always overshoots the breaking point |
+| Ramp-up period | 720 s (12 min) | Gradual ramp so each 60 s stage has ≥ 50 samples for statistical significance |
+| Test duration | 900 s (15 min) | Extra 3 min beyond ramp to observe behaviour at peak load |
+| P75 latency threshold | 1800 ms | P75 (not P90/P95) catches when the majority of users are affected, not just tail latency |
+| Error rate threshold | 0.1% | Conservative — even a small error spike under load indicates capacity limits |
+| Stage window | 60 s | Balances granularity with statistical significance per stage |
+| Min samples per stage | 50 | Prevents false positives from post-crash recovery stages with few samples |
+| JMeter heap | 4 GB (`-Xmx4g`) | Prevents JMeter OOM at high thread counts |
+
+**Analyzer output (`analyze-results.cjs`):**
+
+| Section | Description |
+|---|---|
+| Stage-by-stage table | P75/P90/P95 latency, error rate, throughput, concurrent users per 60 s window |
+| Per-endpoint breakdown | Aggregated metrics for each HTTP sampler |
+| Capacity determination | Highest passing stage before first breach; requires ≥ 50 samples per stage |
+| System resource metrics | JVM/system CPU and heap usage (collected via Groovy JSR223 sampler at 5 s intervals) |
+| ASCII latency chart | P75 latency vs concurrent users; Y-axis capped at 3× threshold to prevent outlier compression |
+| Recommendations | Safe operating capacity (80% of ceiling), bottleneck identification, optimization suggestions |
+| JSON summary | Machine-readable output at `capacity-tests/results/capacity-summary.json` |
+
+**Local test results:**
+
+| Metric | Value |
+|---|---|
+| Capacity ceiling | 344 concurrent users (Stage 4) |
+| First breach | 432 users — error rate 0.146% exceeded 0.1% threshold |
+| Safe operating capacity | ~275 users (80% of ceiling) |
+| Slowest endpoint | GET User Orders (P95: 306,945 ms under heavy load) |
+| Peak heap usage | 64.4% of 4 GB |
+| Peak system CPU | 81.3% |
+
+**Run instructions** (requires [Apache JMeter 5.6.3](https://jmeter.apache.org/) on PATH and server running on port 6060):
+```bash
+npm run test:capacity          # run capacity test (cleanup + JMeter)
+npm run test:capacity:analyze  # analyze results
+```
+HTML reports will be generated at `capacity-tests/results/capacity-report/index.html`, not committed in this repository.
+
+**CI:** [Capacity Tests (JMeter)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/capacity-tests.yaml)
+
 ---
 
 #### Kamat Shivangi Prashant (A0319665R)

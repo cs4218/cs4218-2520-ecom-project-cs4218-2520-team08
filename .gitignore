@@ -12,3 +12,4 @@ jmeter.log
 stress-tests/results/
 load-tests/results/
 recovery-tests/results/
+capacity-tests/results/
