@@ -132,6 +132,29 @@ HTML reports will be generated at `stress-tests/results/<test-name>-report/index
 
 #### Kamat Shivangi Prashant (A0319665R)
 
+**Recovery Tests**
+
+- `recovery-tests/recovery-test.jmx`
+- `recovery-tests/simulate-crash.js`
+
+Implemented JMeter recovery testing to evaluate system resilience and automated recovery mechanisms under an unexpected server crash. The test runs a continuous traffic generator against the backend while a parallel fault injector script simulates a hard failure mid-test by terminating the server process on port 6060 via `SIGKILL`. A subsequent restart via `nodemon` demonstrates whether the application successfully restores functionality and resumes serving requests seamlessly.
+
+| Thread Group | Peak Users | Ramp-up (s) | Hold at peak (s) | Total duration (s) |
+|---|---|---|---|---|
+| Load Generator | 10 | 5 | 55 | 60 |
+| Fault Injector | 1 | 1 | - | - |
+
+| Test Plan | Thread Group | Peak Concurrent Users | Ramp-up | Reason for Load Number | What is tested |
+|---|---|---|---|---|---|
+| `recovery-test.jmx` | Load Generator | 10 | 0 → 10 over 5s | Provides a baseline continuous load to verify endpoints are responding prior to the crash, accurately capture downtime errors, and confirm success upon server recovery. | `GET /api/v1/product/product-count` with 500ms think time |
+| `recovery-test.jmx` | Fault Injector | 1 | 0 → 1 over 1s | A single script execution is sufficient to simulate a system-wide node crash event. | Executes `simulate-crash.js` after 20s to kill the server process on port 6060, waits 5s, and triggers a nodemon restart. |
+
+**Run instructions** (requires [Apache JMeter 5.6.3](https://jmeter.apache.org/) on PATH and server running on port 6060 via `npm run server` or `nodemon`):
+```bash
+npm run test:recovery
+```
+HTML reports will be generated at `recovery-tests/results/recovery-report/index.html`, not committed in this repository.
+
 ### Milestone 2 Integration & UI Tests
 
 #### Tsui Yi Wern (A0266070J)
@@ -324,6 +347,40 @@ Requires app reachable at the Playwright `baseURL` (default `http://localhost:30
 ---
 
 #### Kamat Shivangi Prashant (A0319665R)
+
+**Integration Tests**
+
+- `integration-tests/backend/adminCrud.integration.test.js`
+- `integration-tests/frontend/adminCrud.integration.test.js`
+
+| # | Test | Modules Integrated | Description |
+|---|------|--------------------|-------------|
+| 1 | Category full CRUD lifecycle | `createCategoryController`, `categoryControlller`, `updateCategoryController`, `deleteCategoryCOntroller`, `categoryModel` | Category full CRUD lifecycle with real DB persistence |
+| 2 | Duplicate category rejection | `createCategoryController`, `categoryModel` | Duplicate category creation rejection with 409 conflict |
+| 3 | Product full CRUD lifecycle | `createProductController`, `getProductController`, `updateProductController`, `deleteProductController`, `productModel`, `categoryModel` | Product full CRUD lifecycle with DB relation mapping |
+| 4 | Product photo persistence | `createProductController`, `productPhotoController`, `productModel`, `categoryModel` | Product photo binary data parsing and DB persistence |
+| 5 | Category deletion constraints | `createCategoryController`, `createProductController`, `deleteCategoryCOntroller`, `productModel` | Category deletion enforces constraint preventing orphaned products |
+| 6 | AdminDashboard rendering | `AdminDashboard`, `AuthProvider`, `CartProvider`, `SearchProvider` | AdminDashboard and AdminMenu rendering securely |
+| 7 | CreateCategory interaction | `CreateCategory`, `CategoryForm`, `axios` | CreateCategory UI rendering and Axios POST mapping |
+| 8 | CreateProduct layout bindings | `CreateProduct`, `axios` | CreateProduct layout bindings and FormData submission |
+| 9 | UpdateProduct pre-population | `UpdateProduct`, `axios` | UpdateProduct UI pre-population and save mechanisms |
+| 10 | AdminOrders status alteration | `AdminOrders`, `axios` | AdminOrders status alteration via Select components |
+| 11 | Products listing navigation | `Products`, `axios` | Products listing and dynamic navigation routing mappings |
+
+**UI Tests**
+
+- `ui_tests/adminCrud.spec.js`
+
+| # | Test | Pages / Components Traversed | Description |
+|---|------|-------------------------------|-------------|
+| 1 | Admin Category CRUD Lifecycle | `/login` → `/dashboard/admin/create-category` | Admin Category full CRUD lifecycle executes in UI |
+| 2 | Admin Category Visible on Storefront | `/dashboard/admin/create-category` → `/` → `/categories` | Admin Category creation visibly propagates to Storefront users |
+| 3 | Admin Product Creation | `/dashboard/admin/create-product` → `/dashboard/admin/products` | Admin Product Creation traverses accurately to Product List |
+| 4 | Admin Product Update Flow | `/dashboard/admin/products` → `/dashboard/admin/product/:slug` → `/dashboard/admin/products` | Admin Product Update pre-fills accurately and saves to catalog |
+| 5 | Admin Product Delete Flow | `/dashboard/admin/products` | Admin Product Deletion structurally removes item from Product List |
+| 6 | Admin Orders View and Status Change | `/dashboard/admin/orders` | Admin Orders view reflects accurate status dropdown modifications |
+| 7 | Admin Dashboard Menu Navigation | `/dashboard/admin` → Admin Routes | Admin Dashboard side-menu structural navigation is robust |
+| 8 | Admin vs User Dashboard Routing | `/dashboard/admin` → `/login` → `/dashboard/user` | Admin profile vs Regular User profile strict URL routing |
 
 ---
 
