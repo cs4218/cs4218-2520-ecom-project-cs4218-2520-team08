@@ -418,6 +418,19 @@ describe('brainTreePaymentController', () => {
     expect(mockSale).not.toHaveBeenCalled();
   });
 
+  test('should return 400 when one or more cart products are not found in DB', async () => {
+    const cart = [{ _id: 'p1' }, { _id: 'p2' }];
+    req = makeReq({ nonce: validNonce, cart }, fakeUser);
+    // DB only returns one product instead of two
+    mockProductFind.mockResolvedValue([{ _id: 'p1', price: 10 }]);
+
+    await brainTreePaymentController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith({ error: 'One or more products not found' });
+    expect(mockSale).not.toHaveBeenCalled();
+  });
+
   // ── Price validation issues [BUG-4] ────────────────────────────────────
   test('should use DB prices even when client sends negative prices [BUG-4 FIXED]', async () => {
     const negativeCart = [

@@ -544,6 +544,30 @@ describe("createProductController", () => {
     expect(res.send).toHaveBeenCalledWith({ error: "Price is Required" });
   });
 
+  test("validation: missing category -> 500", async () => {
+    const req = {
+      fields: { name: "A", description: "d", price: 1, category: "", quantity: 1, shipping: 1 },
+      files: { photo: null },
+    };
+    const res = makeRes();
+
+    await createProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Category is Required" });
+  });
+
+  test("validation: missing quantity -> 500", async () => {
+    const req = {
+      fields: { name: "A", description: "d", price: 1, category: "c", quantity: "", shipping: 1 },
+      files: { photo: null },
+    };
+    const res = makeRes();
+
+    await createProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Quantity is Required" });
+  });
+
   test("validation: photo too big -> 500", async () => {
     const req = {
       fields: { name: "A", description: "d", price: 1, category: "c", quantity: 1, shipping: 1 },
@@ -616,6 +640,45 @@ describe("createProductController", () => {
 // Shivangi Kamat, A0319665R
 
 describe("updateProductController", () => {
+  test("validation: missing name -> 500", async () => {
+    const req = {
+      params: { pid: "p1" },
+      fields: { name: "", description: "d", price: 1, category: "c", quantity: 1, shipping: 1 },
+      files: { photo: null },
+    };
+    const res = makeRes();
+
+    await updateProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Name is Required" });
+  });
+
+  test("validation: missing description -> 500", async () => {
+    const req = {
+      params: { pid: "p1" },
+      fields: { name: "X", description: "", price: 1, category: "c", quantity: 1, shipping: 1 },
+      files: { photo: null },
+    };
+    const res = makeRes();
+
+    await updateProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Description is Required" });
+  });
+
+  test("validation: missing price -> 500", async () => {
+    const req = {
+      params: { pid: "p1" },
+      fields: { name: "X", description: "d", price: "", category: "c", quantity: 1, shipping: 1 },
+      files: { photo: null },
+    };
+    const res = makeRes();
+
+    await updateProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Price is Required" });
+  });
+
   test("validation: missing category -> 500", async () => {
     const req = {
       params: { pid: "p1" },
@@ -626,6 +689,34 @@ describe("updateProductController", () => {
 
     await updateProductController(req, res);
     expect(res.send).toHaveBeenCalledWith({ error: "Category is Required" });
+  });
+
+  test("validation: missing quantity -> 500", async () => {
+    const req = {
+      params: { pid: "p1" },
+      fields: { name: "X", description: "d", price: 1, category: "c", quantity: "", shipping: 1 },
+      files: { photo: null },
+    };
+    const res = makeRes();
+
+    await updateProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({ error: "Quantity is Required" });
+  });
+
+  test("validation: photo too large -> 500", async () => {
+    const req = {
+      params: { pid: "p1" },
+      fields: { name: "X", description: "d", price: 1, category: "c", quantity: 1, shipping: 1 },
+      files: { photo: { size: 1000001, path: "/tmp/x", type: "image/png" } },
+    };
+    const res = makeRes();
+
+    await updateProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith({
+      error: "Photo is Required and should be less than 1MB",
+    });
   });
 
   test("happy path: update product successfully -> 201", async () => {

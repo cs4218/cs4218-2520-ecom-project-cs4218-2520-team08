@@ -267,6 +267,13 @@ describe('CartPage – Unit Tests', () => {
       expect(screen.queryByText('Current Address')).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Update Address/i })).toBeInTheDocument();
     });
+
+    it("navigates to profile page when 'Update Address' is clicked", async () => {
+      mockCart = [makeProduct(1)];
+      await renderCartPage();
+      fireEvent.click(screen.getByRole('button', { name: /Update Address/i }));
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard/user/profile');
+    });
   });
 
   // ═══════════════════════════════════════════════════════════════════════════

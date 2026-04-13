@@ -1751,6 +1751,28 @@ describe("authController", () => {
       });
     });
 
+    it("returns 400 when user has no stored answer (null)", async () => {
+      mockReq.body = {
+        email: "test@example.com",
+        answer: "someanswer",
+        newPassword: "newpass",
+      };
+      const mockUser = {
+        _id: "123",
+        email: "test@example.com",
+        answer: null,
+      };
+      userModel.findOne.mockResolvedValue(mockUser);
+
+      await forgotPasswordController(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Wrong Email Or Answer",
+      });
+    });
+
     it("returns 200 with success: true on password reset", async () => {
       mockReq.body = {
         email: "test@example.com",

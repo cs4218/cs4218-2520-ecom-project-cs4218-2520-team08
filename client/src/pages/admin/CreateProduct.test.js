@@ -573,6 +573,65 @@ describe("CreateProduct Component - Unit Tests", () => {
       expect(formData._data).toHaveProperty("photo");
       expect(formData._data).toHaveProperty("category");
     });
+
+    test("should show error toast when API returns success=false", async () => {
+      axios.get.mockResolvedValue({
+        data: { success: true, category: [{ _id: "cat1", name: "Test" }] },
+      });
+      axios.post.mockResolvedValue({
+        data: { success: false, message: "Server validation failed" },
+      });
+
+      await renderCreateProduct();
+      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+
+      await actDo(async () => {
+        fireEvent.click(screen.getByText("CREATE PRODUCT"));
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Server validation failed");
+      });
+      expect(toast.success).not.toHaveBeenCalled();
+    });
+
+    test("should show generic error toast when POST request throws", async () => {
+      axios.get.mockResolvedValue({
+        data: { success: true, category: [] },
+      });
+      const networkError = new Error("Network error");
+      networkError.response = { data: { message: "Internal server error" } };
+      axios.post.mockRejectedValue(networkError);
+
+      await renderCreateProduct();
+      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+
+      await actDo(async () => {
+        fireEvent.click(screen.getByText("CREATE PRODUCT"));
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Internal server error");
+      });
+    });
+
+    test("should show fallback error toast when POST throws without response message", async () => {
+      axios.get.mockResolvedValue({
+        data: { success: true, category: [] },
+      });
+      axios.post.mockRejectedValue(new Error("Connection refused"));
+
+      await renderCreateProduct();
+      await waitFor(() => expect(axios.get).toHaveBeenCalled());
+
+      await actDo(async () => {
+        fireEvent.click(screen.getByText("CREATE PRODUCT"));
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("something went wrong");
+      });
+    });
   });
 
   describe("Edge Cases", () => {

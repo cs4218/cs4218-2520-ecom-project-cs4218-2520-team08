@@ -304,3 +304,118 @@ test("handleDelete does nothing when user cancels prompt", async () => {
   expect(axios.delete).not.toHaveBeenCalled();
   expect(mockNavigate).not.toHaveBeenCalled();
 });
+
+test("getAllCategory does not set categories when API returns success=false", async () => {
+  axios.get.mockImplementation((url) => {
+    if (url.startsWith("/api/v1/product/get-product/")) {
+      return Promise.resolve({
+        data: {
+          product: {
+            _id: "p1",
+            name: "Name",
+            description: "Desc",
+            price: 10,
+            quantity: 1,
+            shipping: 0,
+            category: { _id: "cat1", name: "Cat" },
+          },
+        },
+      });
+    }
+    if (url === "/api/v1/category/get-category") {
+      return Promise.resolve({ data: { success: false } });
+    }
+    return Promise.reject(new Error(`Unhandled GET ${url}`));
+  });
+
+  render(<UpdateProduct />);
+
+  // Wait for the component to finish loading
+  await waitFor(() =>
+    expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category")
+  );
+
+  // With success=false, no category options should be rendered
+  expect(screen.queryByTestId("opt-cat1")).not.toBeInTheDocument();
+});
+
+test("getSingleProduct logs error when API throws", async () => {
+  const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+  const fetchError = new Error("Product fetch failed");
+
+  axios.get.mockImplementation((url) => {
+    if (url.startsWith("/api/v1/product/get-product/")) {
+      return Promise.reject(fetchError);
+    }
+    return Promise.resolve({
+      data: { success: true, category: [] },
+    });
+  });
+
+  render(<UpdateProduct />);
+
+  await waitFor(() => {
+    expect(consoleSpy).toHaveBeenCalledWith(fetchError);
+  });
+
+  consoleSpy.mockRestore();
+});
+
+test("getAllCategory shows error toast when API throws", async () => {
+  const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+  axios.get.mockImplementation((url) => {
+    if (url.startsWith("/api/v1/product/get-product/")) {
+      return Promise.resolve({
+        data: {
+          product: {
+            _id: "p1",
+            name: "Name",
+            description: "Desc",
+            price: 10,
+            quantity: 1,
+            shipping: 0,
+            category: { _id: "cat1", name: "Cat" },
+          },
+        },
+      });
+    }
+    if (url === "/api/v1/category/get-category") {
+      return Promise.reject(new Error("Category fetch failed"));
+    }
+    return Promise.reject(new Error(`Unhandled GET ${url}`));
+  });
+
+  render(<UpdateProduct />);
+
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith(
+      "Something went wrong in getting category"
+    );
+  });
+
+  consoleSpy.mockRestore();
+});
+
+test("handleDelete shows error toast when DELETE throws", async () => {
+  setupDefaultAxios();
+  const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+  const deleteError = new Error("Delete failed");
+  axios.delete.mockRejectedValue(deleteError);
+  window.prompt = jest.fn(() => "yes");
+
+  render(<UpdateProduct />);
+  await waitForInitialLoad();
+
+  await actUser(async () => {
+    await userEvent.click(screen.getByRole("button", { name: /delete product/i }));
+  });
+
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith("Something went wrong");
+  });
+  expect(mockNavigate).not.toHaveBeenCalled();
+
+  consoleSpy.mockRestore();
+});
+

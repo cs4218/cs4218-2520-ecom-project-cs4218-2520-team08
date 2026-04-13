@@ -217,5 +217,57 @@ describe("Profile page", () => {
     expect(toast.error).toHaveBeenCalledWith("Something went wrong");
     logSpy.mockRestore();
   });
+
+  it("does not prefill fields when auth.user is null", async () => {
+    const setAuthMock = jest.fn();
+    useAuth.mockReturnValue([{ token: "t", user: null }, setAuthMock]);
+
+    let getByPlaceholderText;
+    await act(async () => {
+      ({ getByPlaceholderText } = render(<Profile />));
+    });
+
+    // Fields remain at initial empty state when auth.user is null
+    expect(getByPlaceholderText("Enter Your Name")).toHaveValue("");
+    expect(getByPlaceholderText("Enter Your Phone")).toHaveValue("");
+    expect(getByPlaceholderText("Enter Your Address")).toHaveValue("");
+  });
+
+  it("prefills empty string for missing fields when auth.user fields are undefined", async () => {
+    const setAuthMock = jest.fn();
+    useAuth.mockReturnValue([
+      { token: "t", user: { email: "e@example.com" } },
+      setAuthMock,
+    ]);
+
+    let getByPlaceholderText;
+    await act(async () => {
+      ({ getByPlaceholderText } = render(<Profile />));
+    });
+
+    await waitFor(() =>
+      expect(getByPlaceholderText("Enter Your Name")).toHaveValue("")
+    );
+    expect(getByPlaceholderText("Enter Your Phone")).toHaveValue("");
+    expect(getByPlaceholderText("Enter Your Address")).toHaveValue("");
+  });
+
+  it("prefills empty string for all fields when auth.user has no email", async () => {
+    const setAuthMock = jest.fn();
+    useAuth.mockReturnValue([
+      { token: "t", user: { name: "N", phone: "1", address: "A" } },
+      setAuthMock,
+    ]);
+
+    let getByPlaceholderText;
+    await act(async () => {
+      ({ getByPlaceholderText } = render(<Profile />));
+    });
+
+    await waitFor(() =>
+      expect(getByPlaceholderText(/Enter Your Email/)).toHaveValue("")
+    );
+    expect(getByPlaceholderText("Enter Your Name")).toHaveValue("N");
+  });
 });
 
