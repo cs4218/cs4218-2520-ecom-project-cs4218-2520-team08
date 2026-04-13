@@ -33,8 +33,7 @@
     "test:spike:product:yml": "artillery run spike-tests/product-browsing-spike.yml",
     "test:spike:category": "node -e \"const fs=require('fs');fs.rmSync('spike-tests/results/category-spike-results.csv',{force:true});fs.rmSync('spike-tests/results/category-spike-report',{recursive:true,force:true});\" && jmeter -n -t spike-tests/category-spike.jmx -l spike-tests/results/category-spike-results.csv -e -o spike-tests/results/category-spike-report",
     "test:spike:complete": "node -e \"const fs=require('fs');fs.rmSync('spike-tests/results/complete-spike-results.csv',{force:true});fs.rmSync('spike-tests/results/complete-spike-report',{recursive:true,force:true});\" && jmeter -n -t spike-tests/complete-spike.jmx -l spike-tests/results/complete-spike-results.csv -e -o spike-tests/results/complete-spike-report"
-    "test:capacity": "node capacity-tests/cleanup-capacity-users.cjs && node -e \"const fs=require('fs');fs.rmSync('capacity-tests/results/capacity-results.csv',{force:true});fs.rmSync('capacity-tests/results/capacity-report',{recursive:true,force:true});fs.rmSync('capacity-tests/results/system-metrics.csv',{force:true});\" && jmeter -n -t capacity-tests/capacity-test.jmx -l capacity-tests/results/capacity-results.csv -e -o capacity-tests/results/capacity-report",
-    "test:capacity:analyze": "node capacity-tests/analyze-results.cjs"
+    
   },
   "keywords": [],
   "author": "RP",
