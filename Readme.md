@@ -6,6 +6,8 @@
 
 [![Load Tests (JMeter)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/load-tests.yaml/badge.svg)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/load-tests.yaml)
 
+[![Spike Tests (JMeter)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/spike-tests.yaml/badge.svg)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/spike-tests.yaml)
+
 ## Milestone 1 CI Run
 
 [Milestone 1 CI Run](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/runs/22277019646)
@@ -62,6 +64,71 @@ HTML reports will be generated at `load-tests/results/<test-name>-report/index.h
 ---
 
 #### Yeo Zi Yi (A0266292X)
+
+**Spike Tests**
+
+- `spike-tests/authentication-spike.jmx`
+- `spike-tests/product-browsing-spike.jmx`
+- `spike-tests/product-browsing-spike.yml` 
+- `spike-tests/search-filter-spike.jmx`
+- `spike-tests/category-spike.jmx`
+- `spike-tests/complete-spike.jmx`
+
+Implemented comprehensive JMeter spike tests across 5 test plans and 13 thread groups to evaluate **flash-crowd resilience**, short-term saturation behavior, and recovery after abrupt demand surges. Compared with load and stress suites, these plans prioritize abrupt ramp-up (3-10s), high concurrency bursts, and API correctness checks on critical user journeys: authentication, catalog browsing, keyword search, and category traversal. Dedicated CSV inputs in `spike-tests/data/` are used for realistic request diversity and repeatability.
+
+All spike JMX plans are normalized with the same policy:
+- no `ConstantTimer` think-time (pure spike behavior),
+- one scoped `DurationAssertion` SLA (`<= 3000 ms`) per thread group,
+- consistent non-GUI execution and HTML report generation via npm scripts.
+
+| Thread Group | Peak Users | Ramp-up (s) | Hold at peak (s) | Total duration (s) | Pattern |
+|---|---|---|---|---|---|
+| Login Spike | 400 | 3 | 42 | 45 | Flash Spike |
+| Registration Spike | 250 | 5 | 55 | 60 | Flash Spike |
+| Auth Flow Spike | 200 | 5 | 70 | 75 | Flash Spike |
+| Paginated Listing Spike | 350 | 5 | 85 | 90 | Flash Spike |
+| Single Product Spike | 300 | 5 | 85 | 90 | Flash Spike |
+| Related Products Spike | 250 | 5 | 85 | 90 | Flash Spike |
+| Keyword Search Spike | 1000 | 5 | 60 | 65 | Flash Spike |
+| Category Listing Spike | 350 | 5 | 70 | 75 | Flash Spike |
+| Single Category Spike | 300 | 5 | 70 | 75 | Flash Spike |
+| Category Products Spike | 300 | 5 | 70 | 75 | Flash Spike |
+| Complete Suite: Login Spike | 500 | 5 | 60 | 65 | Flash Spike |
+| Complete Suite: Paginated Listing Spike | 1200 | 10 | 60 | 70 | Flash Spike |
+| Complete Suite: Keyword Search Spike | 1000 | 5 | 60 | 65 | Flash Spike |
+
+| Test Plan | Thread Group | Peak Concurrent Users | Ramp-up | Reason for Load Number | What is tested |
+|---|---|---|---|---|---|
+| `authentication-spike.jmx` | Login Spike | 400 | 0 -> 400 over 3s | Sudden login burst targets CPU-bound bcrypt `compare` and request queue stability under near-instant load jump. | `POST /api/v1/auth/login` with HTTP 200 assertion |
+| `authentication-spike.jmx` | Registration Spike | 250 | 0 -> 250 over 5s | Registration uses bcrypt hashing and write-heavy DB operations; spike checks whether creation and validation stay stable during abrupt onboarding waves. | `POST /api/v1/auth/register` with CSV-driven unique users and HTTP 201 assertion |
+| `authentication-spike.jmx` | Auth Flow Spike | 200 | 0 -> 200 over 5s | Chained authenticated flow multiplies per-user request pressure during short bursts, stressing JWT extraction, auth middleware, and order retrieval together. | `POST /login` -> token extract -> `GET /user-auth` -> `GET /orders` |
+| `product-browsing-spike.jmx` | Paginated Listing Spike | 350 | 0 -> 350 over 5s | Tests sudden read-heavy browse demand on count/list endpoints that dominate anonymous traffic during promotions. | `GET /product-count` -> `GET /product-list/1` -> `GET /product-list/2` |
+| `product-browsing-spike.jmx` | Single Product Spike | 300 | 0 -> 300 over 5s | Product detail + photo retrieval is bandwidth and DB heavy; spike validates behavior when many users open detail pages at once. | `GET /get-product` -> slug/id extract -> `GET /get-product/:slug` -> `GET /product-photo/:pid` |
+| `product-browsing-spike.jmx` | Related Products Spike | 250 | 0 -> 250 over 5s | Category-linked related-product queries are common on detail pages; burst verifies response stability under concurrent recommendation lookups. | `GET /get-product` -> extract `pid/cid` -> `GET /related-product/:pid/:cid` |
+| `search-filter-spike.jmx` | Keyword Search Spike | 1000 | 0 -> 1000 over 5s | Most aggressive spike in individual plans; regex-heavy search is expected hotspot, so this finds timeout and tail-latency thresholds quickly. | `GET /api/v1/product/search/:keyword` with rotating CSV keywords |
+| `category-spike.jmx` | Category Listing Spike | 350 | 0 -> 350 over 5s | Tests whether simple list endpoint remains stable under abrupt high fan-out navigation events. | `GET /api/v1/category/get-category` |
+| `category-spike.jmx` | Single Category Spike | 300 | 0 -> 300 over 5s | Validates slug-lookup consistency and routing performance under flash traffic to a single category page. | `GET /api/v1/category/single-category/:slug` |
+| `category-spike.jmx` | Category Products Spike | 300 | 0 -> 300 over 5s | Exercises cross-collection category-to-products fetch during bursty category browsing. | `GET /api/v1/product/product-category/:slug` |
+| `complete-spike.jmx` | Login Spike | 500 | 0 -> 500 over 5s | Combined suite executes high login burst with credential CSV rotation to avoid single-account skew and expose shared-auth bottlenecks. | `POST /api/v1/auth/login` with `spike-tests/data/authentication-credentials.csv` |
+| `complete-spike.jmx` | Paginated Listing Spike | 1200 | 0 -> 1200 over 10s | Highest concurrency in spike suite; simulates flash-sale front-page surge and tests connection pool limits plus queueing behavior. | `GET /product-count` + `GET /product-list/{1,2}` |
+| `complete-spike.jmx` | Keyword Search Spike | 1000 | 0 -> 1000 over 5s | Co-runs with other spikes to validate multi-endpoint contention (CPU + DB + network) in a realistic flash-crowd event. | `GET /api/v1/product/search/:keyword` |
+
+
+**Run instructions** (requires [Apache JMeter 5.6.3](https://jmeter.apache.org/) on PATH and server running on port 6060):
+```bash
+npm run test:spike:product     # product browsing spike
+npm run test:spike:search      # search spike
+npm run test:spike:auth        # authentication spike 
+npm run test:spike:category    # category spike
+npm run test:spike:complete    # combined flash-crowd spike suite
+npm run test:spike             # all spike test plans sequentially
+```
+
+Optional Artillery spike (install [Artillery](https://www.artillery.io/) globally): `npm run test:spike:product:yml` runs `spike-tests/product-browsing-spike.yml`.
+
+HTML reports will be generated at `spike-tests/results/<test-name>-report/index.html`, not committed in this repository.
+
+**CI:** [Spike Tests (JMeter)](https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team08/actions/workflows/spike-tests.yaml) — manual workflow dispatch. By default runs `test:spike:product`, `test:spike:search`, `test:spike:auth`, and `test:spike:category`. Enable the `run_complete_spike` input to also run `test:spike:complete` (combined breaking-point suite).
 
 ---
 
